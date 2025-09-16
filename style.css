@@ -41,6 +41,14 @@ body {
     flex-direction: column;
 }
 
+/* 데스크톱에서도 헤더 고정 */
+.header {
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
 /* 모바일에서 컨테이너 높이 최적화 */
 @media (max-width: 768px) {
     .container {
@@ -48,12 +56,22 @@ body {
         min-height: 100vh;
         max-height: 100vh;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .header {
+        flex-shrink: 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
     
     .main-content {
         flex: 1;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        min-height: 0;
     }
 }
 
@@ -524,6 +542,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    min-height: 0;
 }
 
 .todo-item {
@@ -977,6 +996,8 @@ body {
         flex: 1;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        min-height: 0;
+        padding-bottom: 20px;
     }
     
     .date-section {
@@ -1105,7 +1126,7 @@ body {
     .todos-section {
         padding: 10px;
         flex: 1;
-        overflow-y: auto;
+        overflow-y: visible;
         -webkit-overflow-scrolling: touch;
     }
     
@@ -1343,6 +1364,8 @@ body {
     
     .todos-section {
         padding: 8px;
+        flex: 1;
+        overflow-y: visible;
     }
     
     .todo-item {
