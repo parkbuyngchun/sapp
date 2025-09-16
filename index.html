@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사랑이 스케줄 - 일정정 관리</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <header class="header">
+            <h1 class="app-title">
+                <i class="fas fa-heart"></i>
+                사랑이 스케줄
+            </h1>
+            <p class="app-subtitle">일자별 할일을 기록하고 일정을 관리하세요</p>
+        </header>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="main-content">
+            <!-- 날짜 선택 및 필터 -->
+            <section class="date-section">
+                <div class="date-display">
+                    <div class="selected-date-info">
+                        <span id="selectedDateText" class="date-text">2024년 1월 1일</span>
+                        <span id="selectedDayText" class="day-text">월요일</span>
+                    </div>
+                </div>
+                <div class="date-controls">
+                    <button id="prevDay" class="date-btn">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <input type="date" id="selectedDate" class="date-input">
+                    <button id="nextDay" class="date-btn">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="today-btn-container">
+                    <button id="todayBtn" class="today-btn">오늘</button>
+                    <button id="weekViewBtn" class="week-view-btn">주간보기</button>
+                </div>
+            </section>
+
+            <!-- 할일 추가 폼 -->
+            <section class="add-todo-section">
+                <form id="todoForm" class="todo-form">
+                    <div class="input-group">
+                        <input type="text" id="todoInput" placeholder="새로운 할일을 입력하세요..." required>
+                        <select id="prioritySelect" class="priority-select">
+                            <option value="low">낮음</option>
+                            <option value="medium" selected>보통</option>
+                            <option value="high">높음</option>
+                        </select>
+                        <input type="time" id="timeInput" class="time-input">
+                        <button type="submit" class="add-btn">
+                            <i class="fas fa-plus"></i>
+                            추가
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- 통계 섹션 -->
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalTodos">0</span>
+                        <span class="stat-label">전체 할일</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="completedTodos">0</span>
+                        <span class="stat-label">완료된 할일</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="pendingTodos">0</span>
+                        <span class="stat-label">진행중인 할일</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 할일 목록 -->
+            <section class="todos-section">
+                <div class="section-header">
+                    <h2>할일 목록</h2>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">전체</button>
+                        <button class="filter-btn" data-filter="pending">진행중</button>
+                        <button class="filter-btn" data-filter="completed">완료</button>
+                    </div>
+                </div>
+                <div id="todosList" class="todos-list">
+                    <!-- 할일 항목들이 여기에 동적으로 추가됩니다 -->
+                </div>
+            </section>
+        </main>
+
+        <!-- 푸터 -->
+        <footer class="footer">
+            <p>&copy; 2024 사랑이 스케줄. 모든 권리 보유.</p>
+        </footer>
+    </div>
+
+    <!-- 모달 (할일 수정용) -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>할일 수정</h3>
+                <button id="closeModal" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editForm" class="edit-form">
+                <div class="form-group">
+                    <label for="editTodoInput">할일 내용</label>
+                    <input type="text" id="editTodoInput" required>
+                </div>
+                <div class="form-group">
+                    <label for="editPrioritySelect">우선순위</label>
+                    <select id="editPrioritySelect">
+                        <option value="low">낮음</option>
+                        <option value="medium">보통</option>
+                        <option value="high">높음</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editTimeInput">시간</label>
+                    <input type="time" id="editTimeInput">
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancelEdit" class="btn btn-secondary">취소</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
