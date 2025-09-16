@@ -347,15 +347,15 @@ body {
 }
 
 .priority-select {
-    padding: 15px;
+    padding: 15px 12px;
     border: 2px solid var(--border-color);
     border-radius: var(--border-radius);
     font-size: 1rem;
     font-family: inherit;
     background: var(--white);
     transition: var(--transition);
-    min-width: 80px;
-    max-width: 100px;
+    min-width: 70px;
+    max-width: 90px;
     flex-shrink: 0;
     height: 54px;
     box-sizing: border-box;
@@ -408,7 +408,7 @@ body {
     background: var(--primary-color);
     color: var(--white);
     border: none;
-    padding: 15px 25px;
+    padding: 15px 20px;
     border-radius: var(--border-radius);
     cursor: pointer;
     font-size: 1rem;
@@ -416,8 +416,12 @@ body {
     transition: var(--transition);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     white-space: nowrap;
+    height: 54px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    min-width: 80px;
 }
 
 .add-btn:hover {
@@ -1039,10 +1043,10 @@ body {
     }
     
     .priority-select {
-        padding: 12px 15px;
+        padding: 12px 10px;
         font-size: 16px; /* iOS 줌 방지 */
-        min-width: 80px;
-        max-width: 100px;
+        min-width: 65px;
+        max-width: 80px;
         flex-shrink: 0;
         height: 48px;
         box-sizing: border-box;
@@ -1066,9 +1070,12 @@ body {
     }
     
     .add-btn {
-        padding: 12px 20px;
-        font-size: 1rem;
+        padding: 12px 16px;
+        font-size: 0.9rem;
         justify-content: center;
+        height: 48px;
+        box-sizing: border-box;
+        min-width: 70px;
     }
     
     .stats-section {
@@ -1281,10 +1288,10 @@ body {
     }
     
     .priority-select {
-        padding: 10px 12px;
+        padding: 10px 8px;
         font-size: 14px;
-        min-width: 70px;
-        max-width: 85px;
+        min-width: 55px;
+        max-width: 70px;
         height: 44px;
         box-sizing: border-box;
     }
@@ -1304,6 +1311,14 @@ body {
     .time-input-container {
         flex: 1;
         height: 44px;
+    }
+    
+    .add-btn {
+        padding: 10px 12px;
+        font-size: 0.8rem;
+        height: 44px;
+        box-sizing: border-box;
+        min-width: 60px;
     }
     
     .stats-section {
