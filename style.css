@@ -60,26 +60,27 @@ body {
 /* 헤더 스타일 */
 .header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     background: var(--white);
-    padding: 30px;
+    padding: 20px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
 }
 
 .app-title {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--primary-color);
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 15px;
+    gap: 8px;
 }
 
 .app-title i {
     animation: heartbeat 2s ease-in-out infinite;
+    font-size: 0.9em;
 }
 
 @keyframes heartbeat {
@@ -89,8 +90,9 @@ body {
 
 .app-subtitle {
     color: var(--text-light);
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 300;
+    margin: 0;
 }
 
 /* 메인 컨텐츠 */
@@ -955,19 +957,19 @@ body {
     }
     
     .header {
-        padding: 15px 10px;
-        margin-bottom: 10px;
+        padding: 12px 10px;
+        margin-bottom: 8px;
         flex-shrink: 0;
     }
     
     .app-title {
-        font-size: 1.5rem;
-        flex-direction: column;
-        gap: 5px;
+        font-size: 1.4rem;
+        gap: 6px;
+        margin-bottom: 5px;
     }
     
     .app-subtitle {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
     
     .main-content {
@@ -1226,16 +1228,18 @@ body {
     }
     
     .header {
-        padding: 10px 5px;
+        padding: 8px 5px;
         margin-bottom: 5px;
     }
     
     .app-title {
-        font-size: 1.4rem;
+        font-size: 1.2rem;
+        gap: 4px;
+        margin-bottom: 3px;
     }
     
     .app-subtitle {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
     
     .date-section {
