@@ -319,14 +319,18 @@ body {
 
 .input-group {
     display: flex;
+    flex-direction: column;
     gap: 10px;
-    flex-wrap: wrap;
+}
+
+.input-row {
+    display: flex;
+    gap: 10px;
     align-items: center;
 }
 
 .input-group input[type="text"] {
-    flex: 1;
-    min-width: 250px;
+    width: 100%;
     padding: 15px 20px;
     border: 2px solid var(--border-color);
     border-radius: var(--border-radius);
@@ -341,7 +345,7 @@ body {
     box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
 }
 
-.priority-select, .time-input {
+.priority-select {
     padding: 15px;
     border: 2px solid var(--border-color);
     border-radius: var(--border-radius);
@@ -349,12 +353,49 @@ body {
     font-family: inherit;
     background: var(--white);
     transition: var(--transition);
+    min-width: 80px;
+    max-width: 100px;
+    flex-shrink: 0;
+}
+
+.time-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.time-input {
+    padding: 15px 40px 15px 15px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--white);
+    transition: var(--transition);
+    width: 100%;
+}
+
+.time-label {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.9rem;
+    color: var(--text-light);
+    pointer-events: none;
+    background: var(--white);
+    padding: 0 5px;
 }
 
 .priority-select:focus, .time-input:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+}
+
+.time-input:focus + .time-label {
+    color: var(--primary-color);
 }
 
 .add-btn {
@@ -979,15 +1020,31 @@ body {
         gap: 8px;
     }
     
+    .input-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
     .input-group input[type="text"] {
-        min-width: auto;
         padding: 12px 15px;
         font-size: 16px; /* iOS 줌 방지 */
     }
     
-    .priority-select, .time-input {
+    .priority-select {
         padding: 12px 15px;
         font-size: 16px; /* iOS 줌 방지 */
+        min-width: auto;
+        max-width: none;
+    }
+    
+    .time-input {
+        padding: 12px 40px 12px 15px;
+        font-size: 16px; /* iOS 줌 방지 */
+    }
+    
+    .time-label {
+        font-size: 0.8rem;
+        right: 12px;
     }
     
     .add-btn {
@@ -1196,6 +1253,26 @@ body {
     
     .add-todo-section {
         padding: 8px;
+    }
+    
+    .input-row {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .priority-select {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .time-input {
+        padding: 10px 35px 10px 12px;
+        font-size: 14px;
+    }
+    
+    .time-label {
+        font-size: 0.75rem;
+        right: 10px;
     }
     
     .stats-section {

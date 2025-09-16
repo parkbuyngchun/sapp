@@ -49,12 +49,17 @@
                 <form id="todoForm" class="todo-form">
                     <div class="input-group">
                         <input type="text" id="todoInput" placeholder="새로운 할일을 입력하세요..." required>
-                        <select id="prioritySelect" class="priority-select">
-                            <option value="low">낮음</option>
-                            <option value="medium" selected>보통</option>
-                            <option value="high">높음</option>
-                        </select>
-                        <input type="time" id="timeInput" class="time-input">
+                        <div class="input-row">
+                            <select id="prioritySelect" class="priority-select">
+                                <option value="low">낮음</option>
+                                <option value="medium" selected>보통</option>
+                                <option value="high">높음</option>
+                            </select>
+                            <div class="time-input-container">
+                                <input type="time" id="timeInput" class="time-input" placeholder="시간">
+                                <label for="timeInput" class="time-label">시간</label>
+                            </div>
+                        </div>
                         <button type="submit" class="add-btn">
                             <i class="fas fa-plus"></i>
                             추가
