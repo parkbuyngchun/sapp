@@ -465,8 +465,11 @@ body {
 }
 
 .stat-item {
-    text-align: center;
-    padding: 15px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 8px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-radius: var(--border-radius);
     transition: var(--transition);
@@ -480,18 +483,18 @@ body {
 }
 
 .stat-number {
-    display: block;
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--primary-color);
-    margin-bottom: 3px;
+    white-space: nowrap;
 }
 
 .stat-label {
     font-size: 0.8rem;
     color: var(--text-light);
     font-weight: 500;
-    line-height: 1.2;
+    white-space: nowrap;
+    text-align: left;
 }
 
 /* 할일 목록 섹션 */
@@ -962,10 +965,11 @@ body {
 /* 푸터 */
 .footer {
     text-align: center;
-    padding: 20px;
+    padding: 8px 15px;
     color: var(--text-light);
-    font-size: 0.9rem;
-    margin-top: 30px;
+    font-size: 0.8rem;
+    margin-top: 10px;
+    flex-shrink: 0;
 }
 
 /* 빈 상태 스타일 */
@@ -1136,19 +1140,24 @@ body {
     }
     
     .stat-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
         padding: 8px 6px;
         flex: 1;
         min-width: 0;
     }
     
     .stat-number {
-        font-size: 1.3rem;
-        margin-bottom: 2px;
+        font-size: 1.1rem;
+        white-space: nowrap;
     }
     
     .stat-label {
         font-size: 0.7rem;
-        line-height: 1.1;
+        white-space: nowrap;
+        text-align: left;
     }
     
     .todos-section {
@@ -1156,6 +1165,12 @@ body {
         flex: 1;
         overflow-y: visible;
         -webkit-overflow-scrolling: touch;
+    }
+    
+    .footer {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        margin-top: 8px;
     }
     
     .section-header {
@@ -1382,25 +1397,36 @@ body {
     }
     
     .stat-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
         padding: 6px 4px;
         flex: 1;
         min-width: 0;
     }
     
     .stat-number {
-        font-size: 1.1rem;
-        margin-bottom: 1px;
+        font-size: 1rem;
+        white-space: nowrap;
     }
     
     .stat-label {
         font-size: 0.65rem;
-        line-height: 1.0;
+        white-space: nowrap;
+        text-align: left;
     }
     
     .todos-section {
         padding: 8px;
         flex: 1;
         overflow-y: visible;
+    }
+    
+    .footer {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+        margin-top: 6px;
     }
     
     .todo-item {
