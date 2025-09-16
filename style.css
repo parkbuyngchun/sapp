@@ -459,17 +459,19 @@ body {
 }
 
 .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 20px;
+    display: flex;
+    gap: 15px;
+    justify-content: space-between;
 }
 
 .stat-item {
     text-align: center;
-    padding: 20px;
+    padding: 15px 10px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-radius: var(--border-radius);
     transition: var(--transition);
+    flex: 1;
+    min-width: 0;
 }
 
 .stat-item:hover {
@@ -479,16 +481,17 @@ body {
 
 .stat-number {
     display: block;
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--primary-color);
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 
 .stat-label {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: var(--text-light);
     font-weight: 500;
+    line-height: 1.2;
 }
 
 /* 할일 목록 섹션 */
@@ -1127,20 +1130,25 @@ body {
     }
     
     .stats-grid {
-        grid-template-columns: repeat(3, 1fr);
+        display: flex;
         gap: 8px;
+        justify-content: space-between;
     }
     
     .stat-item {
-        padding: 8px;
+        padding: 8px 6px;
+        flex: 1;
+        min-width: 0;
     }
     
     .stat-number {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
+        margin-bottom: 2px;
     }
     
     .stat-label {
-        font-size: 0.8rem;
+        font-size: 0.7rem;
+        line-height: 1.1;
     }
     
     .todos-section {
@@ -1374,15 +1382,19 @@ body {
     }
     
     .stat-item {
-        padding: 6px;
+        padding: 6px 4px;
+        flex: 1;
+        min-width: 0;
     }
     
     .stat-number {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
+        margin-bottom: 1px;
     }
     
     .stat-label {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
+        line-height: 1.0;
     }
     
     .todos-section {
