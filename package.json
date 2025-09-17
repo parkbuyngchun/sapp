@@ -5,6 +5,9 @@
   "scripts": {
     "start": "live-server --port=8080 --open=/",
     "dev": "live-server --port=3000 --open=/ --watch=.",
+    "download-assets": "node download-assets.js",
+    "create-icons": "open create-icons.html",
+    "pwa-setup": "npm run download-assets && npm run create-icons",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

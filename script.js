@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     loadTodos();
     updateDisplay();
+    registerServiceWorker();
 });
 
 // 앱 초기화
@@ -755,3 +756,101 @@ window.addEventListener('beforeunload', function() {
 
 // 주기적으로 데이터 저장 (5분마다)
 setInterval(saveTodos, 5 * 60 * 1000);
+
+// Service Worker 등록
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('Service Worker 등록 성공:', registration.scope);
+                    
+                    // 업데이트 확인
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // 새 버전이 설치되었을 때 사용자에게 알림
+                                if (confirm('새 버전이 사용 가능합니다. 지금 업데이트하시겠습니까?')) {
+                                    window.location.reload();
+                                }
+                            }
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.log('Service Worker 등록 실패:', error);
+                });
+        });
+    } else {
+        console.log('이 브라우저는 Service Worker를 지원하지 않습니다.');
+    }
+}
+
+// 오프라인/온라인 상태 감지
+window.addEventListener('online', () => {
+    console.log('온라인 상태입니다.');
+    showNotification('인터넷에 연결되었습니다.', 'success');
+});
+
+window.addEventListener('offline', () => {
+    console.log('오프라인 상태입니다.');
+    showNotification('오프라인 모드입니다. 모든 기능이 로컬에서 작동합니다.', 'info');
+});
+
+// PWA 설치 프롬프트
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // 설치 버튼 표시 (선택사항)
+    showInstallButton();
+});
+
+function showInstallButton() {
+    // 설치 버튼을 동적으로 생성하여 표시
+    const installBtn = document.createElement('button');
+    installBtn.textContent = '앱 설치';
+    installBtn.className = 'install-btn';
+    installBtn.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--gradient-primary);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: var(--shadow);
+        cursor: pointer;
+        z-index: 1000;
+        transition: var(--transition);
+    `;
+    
+    installBtn.addEventListener('click', () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('사용자가 PWA 설치를 수락했습니다.');
+                } else {
+                    console.log('사용자가 PWA 설치를 거부했습니다.');
+                }
+                deferredPrompt = null;
+                installBtn.remove();
+            });
+        }
+    });
+    
+    document.body.appendChild(installBtn);
+    
+    // 5초 후 자동으로 숨김
+    setTimeout(() => {
+        if (installBtn.parentNode) {
+            installBtn.remove();
+        }
+    }, 5000);
+}

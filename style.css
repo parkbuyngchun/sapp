@@ -1,4 +1,54 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+/* 로컬 폰트 정의 */
+@font-face {
+  font-family: 'Noto Sans KR';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('./fonts/noto-sans-kr-300.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Sans KR';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/noto-sans-kr-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Sans KR';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/noto-sans-kr-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Sans KR';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/noto-sans-kr-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Sans KR';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/noto-sans-kr-700.woff2') format('woff2');
+}
+
+/* Font Awesome 로컬 폰트 */
+@font-face {
+  font-family: 'Font Awesome 6 Free';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('./icons/font-awesome.woff2') format('woff2'),
+       url('./icons/font-awesome.woff') format('woff'),
+       url('./icons/font-awesome.ttf') format('truetype');
+}
 
 /* 기본 스타일 리셋 */
 * {
