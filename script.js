@@ -3,6 +3,7 @@ let todos = [];
 let currentDate = new Date();
 let currentFilter = 'all';
 let isWeekView = false;
+let missionCount = 0; // 미션 수행 완료 카운터
 
 // DOM 요소들
 const selectedDateInput = document.getElementById('selectedDate');
@@ -38,6 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTodos();
     updateDisplay();
     registerServiceWorker();
+    setupMissionCounterClick();
 });
 
 // 앱 초기화
@@ -154,12 +156,25 @@ function handleAddTodo(e) {
 function toggleTodo(id) {
     const todo = todos.find(t => t.id === id);
     if (todo) {
+        const wasCompleted = todo.completed;
         todo.completed = !todo.completed;
+        
+        // 미션 카운터 업데이트
+        if (!wasCompleted && todo.completed) {
+            missionCount++;
+            showMissionCompleteAnimation();
+            
+            // 미션 레벨 달성 체크
+            checkMissionLevelUp();
+            
+            showNotification(`🎉 미션 완료! 총 ${missionCount}개 완료`, 'success');
+        } else if (wasCompleted && !todo.completed) {
+            missionCount = Math.max(0, missionCount - 1);
+            showNotification('할일을 다시 진행중으로 변경했습니다.', 'info');
+        }
+        
         saveTodos();
         updateDisplay();
-        
-        const message = todo.completed ? '할일을 완료했습니다!' : '할일을 다시 진행중으로 변경했습니다.';
-        showNotification(message, 'info');
     }
 }
 
@@ -237,6 +252,7 @@ function setFilter(filter) {
 function updateDisplay() {
     updateTodosList();
     updateStats();
+    updateMissionCounter();
 }
 
 // 할일 목록 업데이트
@@ -288,6 +304,121 @@ function updateStats() {
     totalTodosSpan.textContent = total;
     completedTodosSpan.textContent = completed;
     pendingTodosSpan.textContent = pending;
+}
+
+// 미션 카운터 업데이트
+function updateMissionCounter() {
+    const missionCountElement = document.getElementById('missionCount');
+    if (missionCountElement) {
+        missionCountElement.textContent = missionCount;
+        
+        // 미션 카운터에 특별한 효과 추가
+        if (missionCount > 0) {
+            missionCountElement.style.animation = 'missionCountBounce 0.5s ease-out';
+            setTimeout(() => {
+                missionCountElement.style.animation = '';
+            }, 500);
+        }
+        
+        // 미션 레벨에 따른 아이콘 변경
+        updateMissionIcon();
+    }
+}
+
+// 미션 레벨에 따른 아이콘 업데이트
+function updateMissionIcon() {
+    const missionIconElement = document.querySelector('.mission-icon');
+    if (missionIconElement) {
+        let icon = '🎯';
+        
+        if (missionCount >= 100) {
+            icon = '🏆';
+        } else if (missionCount >= 50) {
+            icon = '⭐';
+        } else if (missionCount >= 20) {
+            icon = '🔥';
+        } else if (missionCount >= 10) {
+            icon = '💪';
+        } else if (missionCount >= 5) {
+            icon = '🎉';
+        }
+        
+        missionIconElement.textContent = icon;
+    }
+}
+
+// 미션 레벨 업 체크
+function checkMissionLevelUp() {
+    const levelMessages = {
+        5: '🎉 첫 번째 레벨 달성! 5개 완료!',
+        10: '💪 두 번째 레벨 달성! 10개 완료!',
+        20: '🔥 세 번째 레벨 달성! 20개 완료!',
+        50: '⭐ 네 번째 레벨 달성! 50개 완료!',
+        100: '🏆 최고 레벨 달성! 100개 완료!'
+    };
+    
+    if (levelMessages[missionCount]) {
+        setTimeout(() => {
+            showNotification(levelMessages[missionCount], 'success');
+        }, 1000);
+    }
+}
+
+// 미션 카운터 클릭 이벤트 설정
+function setupMissionCounterClick() {
+    const missionCounter = document.querySelector('.mission-counter');
+    if (missionCounter) {
+        missionCounter.addEventListener('click', showMissionDetails);
+    }
+}
+
+// 미션 상세 정보 표시
+function showMissionDetails() {
+    const levelInfo = getMissionLevelInfo();
+    const message = `🎯 미션 진행 현황\n\n완료한 할일: ${missionCount}개\n현재 레벨: ${levelInfo.level}\n다음 레벨까지: ${levelInfo.nextLevel - missionCount}개 남음\n\n${levelInfo.message}`;
+    
+    alert(message);
+}
+
+// 미션 레벨 정보 가져오기
+function getMissionLevelInfo() {
+    if (missionCount >= 100) {
+        return {
+            level: '🏆 최고 레벨',
+            nextLevel: 100,
+            message: '축하합니다! 최고 레벨에 도달했습니다!'
+        };
+    } else if (missionCount >= 50) {
+        return {
+            level: '⭐ 4단계',
+            nextLevel: 100,
+            message: '정말 대단해요! 거의 최고 레벨이에요!'
+        };
+    } else if (missionCount >= 20) {
+        return {
+            level: '🔥 3단계',
+            nextLevel: 50,
+            message: '훌륭해요! 계속 화이팅!'
+        };
+    } else if (missionCount >= 10) {
+        return {
+            level: '💪 2단계',
+            nextLevel: 20,
+            message: '잘하고 있어요! 조금만 더!'
+        };
+    } else if (missionCount >= 5) {
+        return {
+            level: '🎉 1단계',
+            nextLevel: 10,
+            message: '좋은 시작이에요! 계속해보세요!'
+        };
+    } else {
+        return {
+            level: '🎯 시작',
+            nextLevel: 5,
+            message: '첫 번째 목표는 5개 완료예요!'
+        };
+    }
 }
 
 // 할일 HTML 생성
@@ -513,6 +644,33 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// 미션 완료 애니메이션
+function showMissionCompleteAnimation() {
+    // 미션 완료 아이콘 생성
+    const missionIcon = document.createElement('div');
+    missionIcon.className = 'mission-complete-animation';
+    missionIcon.innerHTML = '🎯';
+    missionIcon.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 4rem;
+        z-index: 9999;
+        pointer-events: none;
+        animation: missionComplete 2s ease-out forwards;
+    `;
+    
+    document.body.appendChild(missionIcon);
+    
+    // 2초 후 제거
+    setTimeout(() => {
+        if (missionIcon.parentNode) {
+            missionIcon.parentNode.removeChild(missionIcon);
+        }
+    }, 2000);
+}
+
 // 로컬 스토리지에서 할일 로드
 function loadTodos() {
     try {
@@ -531,9 +689,20 @@ function loadTodos() {
             console.log('저장된 할일 데이터가 없습니다. 새로 시작합니다.');
             todos = [];
         }
+        
+        // 미션 카운터 로드
+        const savedMissionCount = localStorage.getItem('sapp-mission-count');
+        if (savedMissionCount) {
+            missionCount = parseInt(savedMissionCount) || 0;
+            console.log('미션 카운터를 불러왔습니다:', missionCount);
+        } else {
+            missionCount = 0;
+            console.log('저장된 미션 카운터가 없습니다. 0으로 초기화합니다.');
+        }
     } catch (e) {
         console.error('할일 데이터를 불러오는데 실패했습니다:', e);
         todos = [];
+        missionCount = 0;
         showNotification('데이터를 불러오는데 실패했습니다. 새로 시작합니다.', 'warning');
     }
 }
@@ -543,7 +712,9 @@ function saveTodos() {
     try {
         const dataToSave = JSON.stringify(todos);
         localStorage.setItem('sapp-todos', dataToSave);
+        localStorage.setItem('sapp-mission-count', missionCount.toString());
         console.log('할일 데이터를 성공적으로 저장했습니다:', todos.length, '개');
+        console.log('미션 카운터를 저장했습니다:', missionCount);
         return true;
     } catch (e) {
         console.error('할일 데이터를 저장하는데 실패했습니다:', e);
