@@ -50,6 +50,58 @@
        url('./icons/font-awesome.ttf') format('truetype');
 }
 
+/* Font Awesome 아이콘 스타일 */
+.fas {
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.fa-edit:before {
+  content: "\f044";
+}
+
+.fa-trash:before {
+  content: "\f1f8";
+}
+
+.fa-clock:before {
+  content: "\f017";
+}
+
+.fa-times:before {
+  content: "\f00d";
+}
+
+.fa-plus:before {
+  content: "\f067";
+}
+
+.fa-heart:before {
+  content: "\f004";
+}
+
+.fa-calendar:before {
+  content: "\f133";
+}
+
+.fa-chevron-left:before {
+  content: "\f053";
+}
+
+.fa-chevron-right:before {
+  content: "\f054";
+}
+
+.fa-clipboard-list:before {
+  content: "\f46d";
+}
+
 /* 기본 스타일 리셋 */
 * {
     margin: 0;
@@ -675,6 +727,7 @@ body {
     box-shadow: var(--shadow-soft);
     position: relative;
     overflow: hidden;
+    margin-bottom: 8px;
 }
 
 @keyframes slideIn {
@@ -738,6 +791,8 @@ body {
     gap: 8px;
     min-width: 0;
     flex-wrap: nowrap;
+    overflow: hidden;
+    justify-content: space-between;
 }
 
 .todo-text {
@@ -747,8 +802,9 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    flex-shrink: 0;
+    flex: 1;
     min-width: 0;
+    margin-right: 8px;
 }
 
 .todo-text.completed {
@@ -764,6 +820,7 @@ body {
     color: var(--text-light);
     flex-shrink: 0;
     white-space: nowrap;
+    margin-right: 8px;
 }
 
 .todo-time {
@@ -907,6 +964,12 @@ body {
     gap: 6px;
     flex-shrink: 0;
     align-items: center;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.todo-item:hover .todo-actions {
+    opacity: 1;
 }
 
 .todo-btn {
@@ -922,6 +985,8 @@ body {
     width: 28px;
     height: 28px;
     font-size: 0.8rem;
+    color: var(--text-light);
+    flex-shrink: 0;
 }
 
 .todo-btn:hover {
@@ -930,18 +995,24 @@ body {
 
 .edit-btn {
     color: var(--secondary-color);
+    font-size: 0.9rem;
 }
 
 .edit-btn:hover {
-    background: rgba(78, 205, 196, 0.1);
+    background: rgba(78, 205, 196, 0.15);
+    color: var(--secondary-color);
+    transform: scale(1.1);
 }
 
 .delete-btn {
     color: #e74c3c;
+    font-size: 0.9rem;
 }
 
 .delete-btn:hover {
-    background: rgba(231, 76, 60, 0.1);
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+    transform: scale(1.1);
 }
 
 /* 모달 스타일 */

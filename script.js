@@ -313,14 +313,14 @@ function createTodoHTML(todo) {
                     <span class="todo-priority ${todo.priority}">${getPriorityText(todo.priority)}</span>
                     <span class="todo-date-info">${dateInfo}</span>
                 </div>
-            </div>
-            <div class="todo-actions">
-                <button class="todo-btn edit-btn" onclick="editTodo('${todo.id}')" title="수정">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="todo-btn delete-btn" onclick="deleteTodo('${todo.id}')" title="삭제">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <div class="todo-actions">
+                    <button class="todo-btn edit-btn" onclick="editTodo('${todo.id}')" title="수정">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="todo-btn delete-btn" onclick="deleteTodo('${todo.id}')" title="삭제">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
         </div>
     `;
