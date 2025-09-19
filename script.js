@@ -30,10 +30,13 @@ const editPrioritySelect = document.getElementById('editPrioritySelect');
 const editTimeInput = document.getElementById('editTimeInput');
 const cancelEditBtn = document.getElementById('cancelEdit');
 const voiceBtn = document.getElementById('voiceBtn');
+const alarmSettingsBtn = document.getElementById('alarmSettingsBtn');
 
 let editingTodoId = null;
 let isListening = false;
 let recognition = null;
+let alarmPermission = false;
+let scheduledAlarms = new Map(); // 스케줄된 알람들을 저장
 
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
@@ -44,6 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
     registerServiceWorker();
     setupMissionCounterClick();
     initializeVoiceRecognition();
+    initializeAlarmSystem();
 });
 
 // 앱 초기화
@@ -146,6 +150,11 @@ function handleAddTodo(e) {
     saveTodos();
     updateDisplay();
     
+    // 알람 스케줄링
+    if (todo.time) {
+        scheduleAlarm(todo);
+    }
+    
     // 폼 초기화
     todoInput.value = '';
     timeInput.value = '';
@@ -179,12 +188,26 @@ function toggleTodo(id) {
         
         saveTodos();
         updateDisplay();
+        
+        // 알람 업데이트
+        if (todo.time) {
+            if (todo.completed) {
+                clearTodoAlarm(todo.id, todo.date, todo.time);
+            } else {
+                scheduleAlarm(todo);
+            }
+        }
     }
 }
 
 // 할일 삭제
 function deleteTodo(id) {
     if (confirm('정말로 이 할일을 삭제하시겠습니까?')) {
+        const todo = todos.find(t => t.id === id);
+        if (todo && todo.time) {
+            clearTodoAlarm(todo.id, todo.date, todo.time);
+        }
+        
         todos = todos.filter(t => t.id !== id);
         saveTodos();
         updateDisplay();
@@ -220,9 +243,23 @@ function handleEditTodo(e) {
     
     const todo = todos.find(t => t.id === editingTodoId);
     if (todo) {
+        const oldTime = todo.time;
+        const oldDate = todo.date;
+        
         todo.text = text;
         todo.priority = priority;
         todo.time = time;
+        
+        // 기존 알람 클리어
+        if (oldTime) {
+            clearTodoAlarm(todo.id, oldDate, oldTime);
+        }
+        
+        // 새 알람 스케줄링
+        if (todo.time && !todo.completed) {
+            scheduleAlarm(todo);
+        }
+        
         saveTodos();
         updateDisplay();
         closeModal();
@@ -529,6 +566,11 @@ function initializeVoiceRecognition() {
     // 음성 버튼 클릭 이벤트
     if (voiceBtn) {
         voiceBtn.addEventListener('click', toggleVoiceRecognition);
+    }
+    
+    // 알람 설정 버튼 클릭 이벤트
+    if (alarmSettingsBtn) {
+        alarmSettingsBtn.addEventListener('click', showAlarmSettings);
         
         // 모바일 터치 이벤트 추가
         voiceBtn.addEventListener('touchstart', function(e) {
@@ -730,11 +772,193 @@ function hideVoiceStatus() {
     }
 }
 
+// 알람 시스템 초기화
+function initializeAlarmSystem() {
+    // 알림 권한 요청
+    if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+            alarmPermission = true;
+            console.log('알림 권한이 이미 허용되어 있습니다.');
+        } else if (Notification.permission !== 'denied') {
+            requestNotificationPermission();
+        } else {
+            console.log('알림 권한이 거부되었습니다.');
+            showNotification('알림 권한이 필요합니다. 브라우저 설정에서 알림을 허용해주세요.', 'warning');
+        }
+    } else {
+        console.log('이 브라우저는 알림을 지원하지 않습니다.');
+        showNotification('이 브라우저는 알림을 지원하지 않습니다.', 'warning');
+    }
+    
+    // 기존 알람들 스케줄링
+    scheduleAllAlarms();
+}
+
+// 알림 권한 요청
+async function requestNotificationPermission() {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            alarmPermission = true;
+            showNotification('알림 권한이 허용되었습니다! 시간이 설정된 할일에 알람이 울립니다.', 'success');
+            scheduleAllAlarms();
+        } else {
+            alarmPermission = false;
+            showNotification('알림 권한이 거부되었습니다. 알람 기능을 사용하려면 브라우저 설정에서 알림을 허용해주세요.', 'warning');
+        }
+    } catch (error) {
+        console.error('알림 권한 요청 실패:', error);
+        alarmPermission = false;
+    }
+}
+
+// 모든 알람 스케줄링
+function scheduleAllAlarms() {
+    if (!alarmPermission) return;
+    
+    // 기존 알람들 클리어
+    clearAllAlarms();
+    
+    // 모든 할일에 대해 알람 스케줄링
+    todos.forEach(todo => {
+        if (todo.time && !todo.completed) {
+            scheduleAlarm(todo);
+        }
+    });
+}
+
+// 개별 알람 스케줄링
+function scheduleAlarm(todo) {
+    if (!alarmPermission || !todo.time || todo.completed) return;
+    
+    const alarmTime = calculateAlarmTime(todo.date, todo.time);
+    if (!alarmTime || alarmTime <= new Date()) {
+        return; // 과거 시간이면 스케줄링하지 않음
+    }
+    
+    const timeUntilAlarm = alarmTime.getTime() - new Date().getTime();
+    
+    // 알람 ID 생성
+    const alarmId = `alarm_${todo.id}_${todo.date}_${todo.time}`;
+    
+    // 기존 알람이 있으면 취소
+    if (scheduledAlarms.has(alarmId)) {
+        clearTimeout(scheduledAlarms.get(alarmId));
+    }
+    
+    // 새 알람 스케줄링
+    const timeoutId = setTimeout(() => {
+        showAlarmNotification(todo);
+        scheduledAlarms.delete(alarmId);
+    }, timeUntilAlarm);
+    
+    scheduledAlarms.set(alarmId, timeoutId);
+    console.log(`알람 스케줄됨: ${todo.text} - ${alarmTime.toLocaleString()}`);
+}
+
+// 알람 시간 계산
+function calculateAlarmTime(dateStr, timeStr) {
+    try {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        
+        const alarmDate = new Date(year, month - 1, day, hours, minutes, 0);
+        return alarmDate;
+    } catch (error) {
+        console.error('알람 시간 계산 오류:', error);
+        return null;
+    }
+}
+
+// 알람 알림 표시
+function showAlarmNotification(todo) {
+    if (!alarmPermission) return;
+    
+    const notification = new Notification('⏰ 할일 알림', {
+        body: `${todo.text}\n시간: ${todo.time}\n우선순위: ${getPriorityText(todo.priority)}`,
+        icon: 'icons/icon-192x192.png',
+        badge: 'icons/icon-72x72.png',
+        tag: `todo-${todo.id}`,
+        requireInteraction: true,
+        actions: [
+            { action: 'complete', title: '완료 처리' },
+            { action: 'snooze', title: '10분 후 다시' }
+        ]
+    });
+    
+    // 알림 클릭 시 앱으로 포커스
+    notification.onclick = function() {
+        window.focus();
+        notification.close();
+    };
+    
+    // 알림 액션 처리
+    notification.addEventListener('click', function(event) {
+        if (event.action === 'complete') {
+            toggleTodo(todo.id);
+            showNotification('할일이 완료 처리되었습니다!', 'success');
+        } else if (event.action === 'snooze') {
+            // 10분 후 다시 알림
+            setTimeout(() => {
+                showAlarmNotification(todo);
+            }, 10 * 60 * 1000);
+            showNotification('10분 후에 다시 알림이 울립니다.', 'info');
+        }
+    });
+    
+    // 5초 후 자동 닫기
+    setTimeout(() => {
+        notification.close();
+    }, 5000);
+}
+
+// 모든 알람 클리어
+function clearAllAlarms() {
+    scheduledAlarms.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+    });
+    scheduledAlarms.clear();
+}
+
+// 특정 할일의 알람 클리어
+function clearTodoAlarm(todoId, date, time) {
+    const alarmId = `alarm_${todoId}_${date}_${time}`;
+    if (scheduledAlarms.has(alarmId)) {
+        clearTimeout(scheduledAlarms.get(alarmId));
+        scheduledAlarms.delete(alarmId);
+    }
+}
+
+// 알람 설정 모달 표시
+function showAlarmSettings() {
+    const currentDateStr = formatDateForInput(currentDate);
+    const todayTodos = todos.filter(todo => todo.date === currentDateStr);
+    const alarmTodos = todayTodos.filter(todo => todo.time && !todo.completed);
+    
+    let message = `📅 ${currentDateStr} 알람 설정 현황\n\n`;
+    
+    if (alarmTodos.length === 0) {
+        message += '⏰ 설정된 알람이 없습니다.\n할일에 시간을 설정하면 자동으로 알람이 등록됩니다.';
+    } else {
+        message += `🔔 총 ${alarmTodos.length}개의 알람이 설정되어 있습니다:\n\n`;
+        alarmTodos.forEach(todo => {
+            const alarmTime = calculateAlarmTime(todo.date, todo.time);
+            const timeStr = alarmTime ? alarmTime.toLocaleString() : '시간 오류';
+            message += `• ${todo.text}\n  ⏰ ${todo.time} (${timeStr})\n  📊 ${getPriorityText(todo.priority)}\n\n`;
+        });
+    }
+    
+    message += '\n💡 알림 권한이 허용되어야 알람이 작동합니다.';
+    
+    alert(message);
+}
+
 // 할일 HTML 생성
 function createTodoHTML(todo) {
     const priorityClass = `priority-${todo.priority}`;
     const completedClass = todo.completed ? 'completed' : '';
     const timeDisplay = todo.time ? `<span class="todo-time"><i class="fas fa-clock"></i> ${todo.time}</span>` : '';
+    const alarmIcon = todo.time && !todo.completed ? '<span class="alarm-icon" title="알람 설정됨">🔔</span>' : '';
     
     // 할일 생성 날짜 정보 추가
     const createdDate = new Date(todo.createdAt);
@@ -750,6 +974,7 @@ function createTodoHTML(todo) {
                 <div class="todo-text ${todo.completed ? 'completed' : ''}">${escapeHtml(todo.text)}</div>
                 <div class="todo-meta">
                     ${timeDisplay}
+                    ${alarmIcon}
                     <span class="todo-priority ${todo.priority}">${getPriorityText(todo.priority)}</span>
                     <span class="todo-date-info">${dateInfo}</span>
                 </div>

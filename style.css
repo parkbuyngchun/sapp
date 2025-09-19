@@ -323,6 +323,17 @@ body {
     }
 }
 
+@keyframes alarmPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
 .app-subtitle {
     color: var(--text-light);
     font-size: 1rem;
@@ -1046,6 +1057,37 @@ body {
     border-color: var(--primary-color);
 }
 
+.alarm-settings-btn {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 36px;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.alarm-settings-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
+.alarm-settings-btn:active {
+    transform: translateY(0);
+}
+
+.alarm-settings-btn i {
+    font-size: 0.9rem;
+}
+
 .todos-list {
     display: flex;
     flex-direction: column;
@@ -1253,6 +1295,15 @@ body {
     gap: 3px;
     font-size: 0.75rem;
     color: var(--text-light);
+    flex-shrink: 0;
+}
+
+.alarm-icon {
+    font-size: 0.8rem;
+    color: #ff6b35;
+    animation: alarmPulse 2s ease-in-out infinite;
+    cursor: help;
+    margin-left: 4px;
     flex-shrink: 0;
 }
 
@@ -2065,6 +2116,20 @@ body {
     .divider-text {
         font-size: 0.8rem;
         padding: 6px 12px;
+    }
+    
+    .alarm-settings-btn {
+        min-width: 36px;
+        height: 32px;
+        padding: 6px 10px;
+    }
+    
+    .alarm-settings-btn i {
+        font-size: 0.8rem;
+    }
+    
+    .alarm-icon {
+        font-size: 0.7rem;
     }
     
     .add-btn {
