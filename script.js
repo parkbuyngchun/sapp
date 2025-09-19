@@ -29,8 +29,11 @@ const editTodoInput = document.getElementById('editTodoInput');
 const editPrioritySelect = document.getElementById('editPrioritySelect');
 const editTimeInput = document.getElementById('editTimeInput');
 const cancelEditBtn = document.getElementById('cancelEdit');
+const voiceBtn = document.getElementById('voiceBtn');
 
 let editingTodoId = null;
+let isListening = false;
+let recognition = null;
 
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
@@ -40,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateDisplay();
     registerServiceWorker();
     setupMissionCounterClick();
+    initializeVoiceRecognition();
 });
 
 // 앱 초기화
@@ -418,6 +422,272 @@ function getMissionLevelInfo() {
             nextLevel: 5,
             message: '첫 번째 목표는 5개 완료예요!'
         };
+    }
+}
+
+// 음성 인식 초기화
+function initializeVoiceRecognition() {
+    // Web Speech API 지원 확인
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        console.warn('이 브라우저는 음성 인식을 지원하지 않습니다.');
+        if (voiceBtn) {
+            voiceBtn.style.display = 'none';
+        }
+        return;
+    }
+
+    // SpeechRecognition 객체 생성
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    
+    // 음성 인식 설정
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'ko-KR';
+    
+    // 음성 인식 이벤트 리스너
+    recognition.onstart = function() {
+        isListening = true;
+        updateVoiceButtonState();
+        showNotification('🎤 음성 인식이 시작되었습니다. 말씀해주세요!', 'info');
+        
+        // 음성 인식 상태 표시
+        showVoiceStatus('listening');
+    };
+    
+    recognition.onresult = function(event) {
+        showVoiceStatus('processing');
+        const transcript = event.results[0][0].transcript;
+        processVoiceInput(transcript);
+    };
+    
+    recognition.onerror = function(event) {
+        console.error('음성 인식 오류:', event.error);
+        isListening = false;
+        updateVoiceButtonState();
+        
+        let errorMessage = '음성 인식 중 오류가 발생했습니다.';
+        switch(event.error) {
+            case 'no-speech':
+                errorMessage = '음성이 감지되지 않았습니다. 다시 시도해주세요.';
+                break;
+            case 'audio-capture':
+                errorMessage = '마이크에 접근할 수 없습니다. 마이크 권한을 확인해주세요.';
+                break;
+            case 'not-allowed':
+                errorMessage = '마이크 사용 권한이 거부되었습니다. 브라우저 설정에서 마이크 권한을 허용해주세요.';
+                break;
+        }
+        showNotification(errorMessage, 'error');
+    };
+    
+    recognition.onend = function() {
+        isListening = false;
+        updateVoiceButtonState();
+        hideVoiceStatus();
+    };
+    
+    // 음성 버튼 클릭 이벤트
+    if (voiceBtn) {
+        voiceBtn.addEventListener('click', toggleVoiceRecognition);
+        
+        // 모바일 터치 이벤트 추가
+        voiceBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            if (!isListening) {
+                toggleVoiceRecognition();
+            }
+        });
+        
+        // 길게 누르기로 음성 인식 중지
+        let touchTimer;
+        voiceBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            touchTimer = setTimeout(() => {
+                if (isListening) {
+                    recognition.stop();
+                }
+            }, 1000);
+        });
+        
+        voiceBtn.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            clearTimeout(touchTimer);
+        });
+    }
+}
+
+// 음성 인식 토글
+function toggleVoiceRecognition() {
+    if (!recognition) {
+        showNotification('음성 인식을 지원하지 않는 브라우저입니다.', 'error');
+        return;
+    }
+    
+    if (isListening) {
+        recognition.stop();
+    } else {
+        try {
+            recognition.start();
+        } catch (error) {
+            console.error('음성 인식 시작 오류:', error);
+            showNotification('음성 인식을 시작할 수 없습니다. 잠시 후 다시 시도해주세요.', 'error');
+        }
+    }
+}
+
+// 음성 버튼 상태 업데이트
+function updateVoiceButtonState() {
+    if (!voiceBtn) return;
+    
+    if (isListening) {
+        voiceBtn.classList.add('listening');
+        voiceBtn.title = '음성 인식 중... (클릭하여 중지)';
+    } else {
+        voiceBtn.classList.remove('listening');
+        voiceBtn.title = '음성으로 할일 추가';
+    }
+}
+
+// 음성 입력 결과 처리
+function processVoiceInput(transcript) {
+    console.log('음성 인식 결과:', transcript);
+    
+    // 음성 입력을 할일 텍스트에 설정
+    if (todoInput) {
+        const cleanTranscript = transcript.trim();
+        todoInput.value = cleanTranscript;
+        todoInput.focus();
+        
+        // 음성 입력 결과 표시
+        showVoiceStatus('success');
+        showNotification(`🎤 "${cleanTranscript}" 음성 입력이 완료되었습니다.`, 'success');
+        
+        // 우선순위 자동 감지
+        const detectedPriority = detectPriorityFromVoice(cleanTranscript);
+        if (detectedPriority && prioritySelect) {
+            prioritySelect.value = detectedPriority;
+            showNotification(`우선순위가 "${detectedPriority === 'high' ? '높음' : detectedPriority === 'medium' ? '보통' : '낮음'}"으로 자동 설정되었습니다.`, 'info');
+        }
+        
+        // 시간 자동 감지
+        const detectedTime = detectTimeFromVoice(cleanTranscript);
+        if (detectedTime && timeInput) {
+            timeInput.value = detectedTime;
+            showNotification(`시간이 "${detectedTime}"으로 자동 설정되었습니다.`, 'info');
+        }
+        
+        // 2초 후 자동으로 할일 추가
+        setTimeout(() => {
+            if (todoInput.value.trim()) {
+                addTodo();
+            }
+        }, 2000);
+    }
+}
+
+// 음성에서 우선순위 감지
+function detectPriorityFromVoice(text) {
+    const highKeywords = ['중요', '긴급', '높음', '빠르게', '즉시', '우선'];
+    const lowKeywords = ['낮음', '나중에', '여유', '천천히', '낮은'];
+    
+    const lowerText = text.toLowerCase();
+    
+    for (let keyword of highKeywords) {
+        if (lowerText.includes(keyword)) {
+            return 'high';
+        }
+    }
+    
+    for (let keyword of lowKeywords) {
+        if (lowerText.includes(keyword)) {
+            return 'low';
+        }
+    }
+    
+    return null; // 기본값 사용
+}
+
+// 음성에서 시간 감지
+function detectTimeFromVoice(text) {
+    const timePatterns = [
+        /(\d{1,2})시/,
+        /(\d{1,2}):(\d{2})/,
+        /오전\s*(\d{1,2})시/,
+        /오후\s*(\d{1,2})시/,
+        /(\d{1,2})시\s*(\d{1,2})분/
+    ];
+    
+    for (let pattern of timePatterns) {
+        const match = text.match(pattern);
+        if (match) {
+            let hour = parseInt(match[1]);
+            let minute = match[2] ? parseInt(match[2]) : 0;
+            
+            // 오후 시간 처리
+            if (text.includes('오후') && hour < 12) {
+                hour += 12;
+            }
+            
+            // 24시간 형식으로 변환
+            const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            return timeString;
+        }
+    }
+    
+    return null; // 시간 감지 실패
+}
+
+// 음성 인식 상태 표시
+function showVoiceStatus(status) {
+    // 기존 상태 표시 제거
+    hideVoiceStatus();
+    
+    const statusDiv = document.createElement('div');
+    statusDiv.id = 'voiceStatus';
+    statusDiv.className = 'voice-status';
+    
+    let message = '';
+    let icon = '';
+    
+    switch(status) {
+        case 'listening':
+            message = '🎤 듣고 있습니다...';
+            icon = '🎤';
+            break;
+        case 'processing':
+            message = '🔄 처리 중...';
+            icon = '🔄';
+            break;
+        case 'success':
+            message = '✅ 음성 인식 완료!';
+            icon = '✅';
+            break;
+        case 'error':
+            message = '❌ 음성 인식 실패';
+            icon = '❌';
+            break;
+    }
+    
+    statusDiv.innerHTML = `
+        <div class="voice-status-content">
+            <span class="voice-status-icon">${icon}</span>
+            <span class="voice-status-text">${message}</span>
+        </div>
+    `;
+    
+    // 할일 입력 필드 아래에 추가
+    const inputGroup = document.querySelector('.input-group');
+    if (inputGroup) {
+        inputGroup.appendChild(statusDiv);
+    }
+}
+
+// 음성 인식 상태 숨기기
+function hideVoiceStatus() {
+    const statusDiv = document.getElementById('voiceStatus');
+    if (statusDiv) {
+        statusDiv.remove();
     }
 }
 
