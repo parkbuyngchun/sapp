@@ -1100,8 +1100,92 @@ body {
 
 .todo-item.completed {
     opacity: 0.7;
-    background: #e8f5e8;
-    border-left-color: var(--secondary-color);
+    background: linear-gradient(135deg, rgba(200, 200, 200, 0.15) 0%, rgba(180, 180, 180, 0.08) 100%);
+    border-left-color: #e0e0e0;
+    position: relative;
+}
+
+.todo-item.completed::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+.todo-item.completed .todo-text {
+    text-decoration: line-through;
+    color: var(--text-light);
+    position: relative;
+}
+
+.todo-item.completed .todo-meta {
+    opacity: 0.8;
+}
+
+.todo-item.completed .todo-actions {
+    opacity: 0.6;
+}
+
+/* 진행중인 할일 강조 */
+.todo-item:not(.completed) {
+    border-left-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(255, 107, 157, 0.1);
+    position: relative;
+}
+
+.todo-item:not(.completed)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 107, 157, 0.02) 0%, rgba(255, 143, 179, 0.02) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+.todo-item:not(.completed):hover {
+    box-shadow: 0 4px 12px rgba(255, 107, 157, 0.15);
+    transform: translateY(-1px);
+}
+
+.todo-item:not(.completed):hover::before {
+    background: linear-gradient(135deg, rgba(255, 107, 157, 0.05) 0%, rgba(255, 143, 179, 0.05) 100%);
+}
+
+/* 할일 구분선 */
+.todo-divider {
+    margin: 20px 0 15px 0;
+    text-align: center;
+    position: relative;
+}
+
+.todo-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e0e0e0, transparent);
+}
+
+.divider-text {
+    background: var(--white);
+    padding: 8px 16px;
+    color: var(--text-light);
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 20px;
+    border: 1px solid #e0e0e0;
+    position: relative;
+    z-index: 1;
 }
 
 .todo-item.high-priority {
@@ -1972,6 +2056,15 @@ body {
     
     .voice-status-text {
         font-size: 0.8rem;
+    }
+    
+    .todo-divider {
+        margin: 15px 0 10px 0;
+    }
+    
+    .divider-text {
+        font-size: 0.8rem;
+        padding: 6px 12px;
     }
     
     .add-btn {

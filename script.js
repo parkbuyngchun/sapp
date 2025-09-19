@@ -275,14 +275,32 @@ function updateTodosList() {
         // 'all'은 필터링하지 않음
     }
     
-    // 우선순위별 정렬 (높음 > 보통 > 낮음)
+    // 1. 완료 상태별 정렬 (진행중 > 완료)
     filteredTodos.sort((a, b) => {
+        if (a.completed === b.completed) {
+            return 0;
+        }
+        return a.completed ? 1 : -1; // 진행중(false)이 먼저 오도록
+    });
+    
+    // 2. 우선순위별 정렬 (높음 > 보통 > 낮음) - 같은 완료 상태 내에서
+    filteredTodos.sort((a, b) => {
+        if (a.completed !== b.completed) {
+            return 0; // 완료 상태가 다르면 이미 정렬됨
+        }
         const priorityOrder = { high: 3, medium: 2, low: 1 };
         return priorityOrder[b.priority] - priorityOrder[a.priority];
     });
     
-    // 시간순 정렬 (시간이 있는 경우)
+    // 3. 시간순 정렬 (시간이 있는 경우) - 같은 완료 상태, 같은 우선순위 내에서
     filteredTodos.sort((a, b) => {
+        if (a.completed !== b.completed) {
+            return 0; // 완료 상태가 다르면 이미 정렬됨
+        }
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+            return 0; // 우선순위가 다르면 이미 정렬됨
+        }
         if (a.time && b.time) {
             return a.time.localeCompare(b.time);
         }
@@ -292,7 +310,28 @@ function updateTodosList() {
     if (filteredTodos.length === 0) {
         todosList.innerHTML = getEmptyStateHTML();
     } else {
-        todosList.innerHTML = filteredTodos.map(todo => createTodoHTML(todo)).join('');
+        // 진행중인 할일과 완료된 할일을 분리
+        const pendingTodos = filteredTodos.filter(todo => !todo.completed);
+        const completedTodos = filteredTodos.filter(todo => todo.completed);
+        
+        let html = '';
+        
+        // 진행중인 할일
+        if (pendingTodos.length > 0) {
+            html += pendingTodos.map(todo => createTodoHTML(todo)).join('');
+        }
+        
+        // 구분선 (진행중인 할일과 완료된 할일이 모두 있을 때)
+        if (pendingTodos.length > 0 && completedTodos.length > 0) {
+            html += '<div class="todo-divider"><span class="divider-text">완료된 할일</span></div>';
+        }
+        
+        // 완료된 할일
+        if (completedTodos.length > 0) {
+            html += completedTodos.map(todo => createTodoHTML(todo)).join('');
+        }
+        
+        todosList.innerHTML = html;
     }
 }
 
@@ -899,6 +938,26 @@ function getCurrentDayTodos() {
             filteredTodos = filteredTodos.filter(todo => !todo.completed);
             break;
     }
+    
+    // 정렬 적용 (진행중 > 완료 > 우선순위 > 시간)
+    filteredTodos.sort((a, b) => {
+        // 1. 완료 상태별 정렬 (진행중 > 완료)
+        if (a.completed !== b.completed) {
+            return a.completed ? 1 : -1;
+        }
+        
+        // 2. 우선순위별 정렬 (높음 > 보통 > 낮음)
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+            return priorityOrder[b.priority] - priorityOrder[a.priority];
+        }
+        
+        // 3. 시간순 정렬
+        if (a.time && b.time) {
+            return a.time.localeCompare(b.time);
+        }
+        return 0;
+    });
     
     if (filteredTodos.length === 0) {
         return getEmptyStateHTML();
