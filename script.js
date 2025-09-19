@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
     setupMissionCounterClick();
     initializeVoiceRecognition();
     initializeAlarmSystem();
+    
+    // 호환성 정보 표시
+    showCompatibilityInfo();
 });
 
 // 앱 초기화
@@ -511,6 +514,15 @@ function initializeVoiceRecognition() {
         }
         return;
     }
+    
+    // iOS Safari에서 HTTPS 확인
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+        console.warn('음성 인식은 HTTPS 환경에서만 작동합니다.');
+        if (voiceBtn) {
+            voiceBtn.style.display = 'none';
+        }
+        return;
+    }
 
     // SpeechRecognition 객체 생성
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -571,6 +583,22 @@ function initializeVoiceRecognition() {
     // 알람 설정 버튼 클릭 이벤트
     if (alarmSettingsBtn) {
         alarmSettingsBtn.addEventListener('click', showAlarmSettings);
+        
+        // 알람 테스트 기능 (길게 누르기)
+        let longPressTimer = null;
+        alarmSettingsBtn.addEventListener('touchstart', function(e) {
+            longPressTimer = setTimeout(() => {
+                testAlarm();
+            }, 2000);
+        });
+        
+        alarmSettingsBtn.addEventListener('touchend', function(e) {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        });
+    }
         
         // 모바일 터치 이벤트 추가
         voiceBtn.addEventListener('touchstart', function(e) {
@@ -774,6 +802,48 @@ function hideVoiceStatus() {
 
 // 알람 시스템 초기화
 function initializeAlarmSystem() {
+    // 디바이스 및 브라우저 정보 로깅
+    const userAgent = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    const isAndroid = /Android/.test(userAgent);
+    const isSamsung = /SamsungBrowser/.test(userAgent);
+    const isChrome = /Chrome/.test(userAgent);
+    
+    console.log('🔍 디바이스 정보:', {
+        userAgent: userAgent,
+        isIOS: isIOS,
+        isAndroid: isAndroid,
+        isSamsung: isSamsung,
+        isChrome: isChrome,
+        protocol: window.location.protocol,
+        hostname: window.location.hostname
+    });
+    
+    // iOS Safari 알림 제한 확인
+    const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+    
+    if (isIOS && isSafari) {
+        console.log('iOS Safari에서는 웹 알림이 제한됩니다. PWA로 설치하면 더 나은 경험을 제공합니다.');
+        showNotification('iOS에서는 PWA로 설치하면 알람 기능을 사용할 수 있습니다.', 'info');
+        
+        // iOS 대안: 페이지 타이틀 변경으로 알림 대체
+        setupIOSAlarmAlternative();
+        return;
+    }
+    
+    // 삼성 브라우저 특별 처리
+    if (isSamsung) {
+        console.log('삼성 브라우저 감지됨. 알림 권한을 확인합니다.');
+        showNotification('삼성 브라우저에서 알람 기능을 사용하려면 알림 권한이 필요합니다.', 'info');
+        
+        // 삼성 브라우저에서 알림 권한 요청 강화
+        setTimeout(() => {
+            if (Notification.permission === 'default') {
+                showNotification('삼성 브라우저에서 알림을 허용하려면 브라우저 설정 > 사이트 설정 > 알림에서 허용해주세요.', 'warning');
+            }
+        }, 3000);
+    }
+    
     // 알림 권한 요청
     if ('Notification' in window) {
         if (Notification.permission === 'granted') {
@@ -829,31 +899,70 @@ function scheduleAllAlarms() {
 
 // 개별 알람 스케줄링
 function scheduleAlarm(todo) {
-    if (!alarmPermission || !todo.time || todo.completed) return;
+    console.log('🔔 알람 스케줄링 시도:', {
+        todoId: todo.id,
+        todoText: todo.text,
+        todoTime: todo.time,
+        todoDate: todo.date,
+        completed: todo.completed,
+        alarmPermission: alarmPermission
+    });
+    
+    if (!alarmPermission) {
+        console.warn('❌ 알람 권한이 없습니다.');
+        return;
+    }
+    
+    if (!todo.time) {
+        console.warn('❌ 할일에 시간이 설정되지 않았습니다.');
+        return;
+    }
+    
+    if (todo.completed) {
+        console.warn('❌ 완료된 할일은 알람을 스케줄링하지 않습니다.');
+        return;
+    }
     
     const alarmTime = calculateAlarmTime(todo.date, todo.time);
+    console.log('⏰ 계산된 알람 시간:', {
+        alarmTime: alarmTime,
+        currentTime: new Date(),
+        isFuture: alarmTime && alarmTime > new Date()
+    });
+    
     if (!alarmTime || alarmTime <= new Date()) {
-        return; // 과거 시간이면 스케줄링하지 않음
+        console.warn('❌ 과거 시간이므로 알람을 스케줄링하지 않습니다.');
+        return;
     }
     
     const timeUntilAlarm = alarmTime.getTime() - new Date().getTime();
+    console.log('⏱️ 알람까지 남은 시간:', {
+        milliseconds: timeUntilAlarm,
+        minutes: Math.round(timeUntilAlarm / 60000),
+        hours: Math.round(timeUntilAlarm / 3600000)
+    });
     
     // 알람 ID 생성
     const alarmId = `alarm_${todo.id}_${todo.date}_${todo.time}`;
     
     // 기존 알람이 있으면 취소
     if (scheduledAlarms.has(alarmId)) {
+        console.log('🔄 기존 알람을 취소합니다:', alarmId);
         clearTimeout(scheduledAlarms.get(alarmId));
     }
     
     // 새 알람 스케줄링
     const timeoutId = setTimeout(() => {
+        console.log('🔔 알람이 울렸습니다!', todo.text);
         showAlarmNotification(todo);
         scheduledAlarms.delete(alarmId);
     }, timeUntilAlarm);
     
     scheduledAlarms.set(alarmId, timeoutId);
-    console.log(`알람 스케줄됨: ${todo.text} - ${alarmTime.toLocaleString()}`);
+    console.log(`✅ 알람 스케줄됨: ${todo.text} - ${alarmTime.toLocaleString()}`);
+    
+    // 현재 스케줄된 알람 목록 표시
+    console.log('📋 현재 스케줄된 알람 목록:', Array.from(scheduledAlarms.keys()));
 }
 
 // 알람 시간 계산
@@ -937,6 +1046,13 @@ function showAlarmSettings() {
     
     let message = `📅 ${currentDateStr} 알람 설정 현황\n\n`;
     
+    // 디버그 정보 추가
+    message += `🔍 디버그 정보:\n`;
+    message += `• 알림 권한: ${Notification.permission}\n`;
+    message += `• 알람 활성화: ${alarmPermission ? '✅' : '❌'}\n`;
+    message += `• 스케줄된 알람: ${scheduledAlarms.size}개\n`;
+    message += `• 브라우저: ${navigator.userAgent.includes('SamsungBrowser') ? '삼성 브라우저' : '기타'}\n\n`;
+    
     if (alarmTodos.length === 0) {
         message += '⏰ 설정된 알람이 없습니다.\n할일에 시간을 설정하면 자동으로 알람이 등록됩니다.';
     } else {
@@ -944,13 +1060,203 @@ function showAlarmSettings() {
         alarmTodos.forEach(todo => {
             const alarmTime = calculateAlarmTime(todo.date, todo.time);
             const timeStr = alarmTime ? alarmTime.toLocaleString() : '시간 오류';
-            message += `• ${todo.text}\n  ⏰ ${todo.time} (${timeStr})\n  📊 ${getPriorityText(todo.priority)}\n\n`;
+            const isScheduled = scheduledAlarms.has(`alarm_${todo.id}_${todo.date}_${todo.time}`);
+            message += `• ${todo.text}\n  ⏰ ${todo.time} (${timeStr})\n  📊 ${getPriorityText(todo.priority)}\n  🔔 스케줄: ${isScheduled ? '✅' : '❌'}\n\n`;
         });
     }
     
     message += '\n💡 알림 권한이 허용되어야 알람이 작동합니다.';
+    message += '\n\n🔧 알람 테스트: 알람 설정 버튼을 2초간 길게 누르세요.';
     
     alert(message);
+}
+
+// iOS 대안 알람 시스템 설정
+function setupIOSAlarmAlternative() {
+    // iOS에서는 페이지 타이틀 변경과 사운드로 알림 대체
+    const originalTitle = document.title;
+    let alarmInterval = null;
+    
+    // 모든 할일에 대해 iOS 대안 알람 스케줄링
+    todos.forEach(todo => {
+        if (todo.time && !todo.completed) {
+            scheduleIOSAlarm(todo, originalTitle);
+        }
+    });
+}
+
+// iOS 대안 알람 스케줄링
+function scheduleIOSAlarm(todo, originalTitle) {
+    const alarmTime = calculateAlarmTime(todo.date, todo.time);
+    if (!alarmTime || alarmTime <= new Date()) {
+        return;
+    }
+    
+    const timeUntilAlarm = alarmTime.getTime() - new Date().getTime();
+    
+    setTimeout(() => {
+        // 페이지 타이틀 변경으로 알림
+        document.title = `⏰ ${todo.text} - 사랑이 스케줄`;
+        
+        // 사운드 재생 (가능한 경우)
+        playAlarmSound();
+        
+        // 10초 후 원래 타이틀로 복원
+        setTimeout(() => {
+            document.title = originalTitle;
+        }, 10000);
+        
+        // 화면에 알림 표시
+        showIOSAlarmNotification(todo);
+        
+    }, timeUntilAlarm);
+}
+
+// iOS 알람 사운드 재생
+function playAlarmSound() {
+    try {
+        // Web Audio API를 사용한 간단한 알람 사운드
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (error) {
+        console.log('사운드 재생을 지원하지 않습니다.');
+    }
+}
+
+// iOS 알람 알림 표시
+function showIOSAlarmNotification(todo) {
+    const notificationDiv = document.createElement('div');
+    notificationDiv.className = 'ios-alarm-notification';
+    notificationDiv.innerHTML = `
+        <div class="ios-alarm-content">
+            <div class="ios-alarm-icon">⏰</div>
+            <div class="ios-alarm-text">
+                <div class="ios-alarm-title">할일 알림</div>
+                <div class="ios-alarm-body">${todo.text}</div>
+                <div class="ios-alarm-time">시간: ${todo.time}</div>
+            </div>
+            <button class="ios-alarm-close" onclick="this.parentElement.parentElement.remove()">×</button>
+        </div>
+    `;
+    
+    document.body.appendChild(notificationDiv);
+    
+    // 5초 후 자동 제거
+    setTimeout(() => {
+        if (notificationDiv.parentElement) {
+            notificationDiv.remove();
+        }
+    }, 5000);
+}
+
+// 호환성 정보 표시
+function showCompatibilityInfo() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    const isChrome = /Chrome/.test(navigator.userAgent);
+    
+    let compatibilityInfo = '';
+    
+    if (isIOS) {
+        if (isSafari) {
+            compatibilityInfo = `
+📱 iOS Safari 사용자 안내:
+• 음성입력: HTTPS 환경에서 작동 (현재: ${window.location.protocol === 'https:' ? '✅ 지원' : '❌ HTTPS 필요'})
+• 알람기능: PWA로 설치하면 더 나은 경험 제공
+• 권장: Chrome 브라우저 사용 또는 PWA 설치
+            `;
+        } else if (isChrome) {
+            compatibilityInfo = `
+📱 iOS Chrome 사용자 안내:
+• 음성입력: ✅ 지원됨
+• 알람기능: ✅ 지원됨
+• 모든 기능이 정상 작동합니다!
+            `;
+        }
+    } else if (isAndroid) {
+        compatibilityInfo = `
+🤖 Android 사용자 안내:
+• 음성입력: ✅ 지원됨
+• 알람기능: ✅ 지원됨
+• 모든 기능이 정상 작동합니다!
+            `;
+    }
+    
+    if (compatibilityInfo) {
+        console.log(compatibilityInfo);
+        
+        // 첫 방문 시에만 표시
+        if (!localStorage.getItem('compatibilityInfoShown')) {
+            setTimeout(() => {
+                showNotification(compatibilityInfo.trim(), 'info');
+                localStorage.setItem('compatibilityInfoShown', 'true');
+            }, 2000);
+        }
+    }
+}
+
+// 알람 테스트 함수
+function testAlarm() {
+    console.log('🧪 알람 테스트 시작');
+    
+    // 현재 상태 확인
+    const status = {
+        alarmPermission: alarmPermission,
+        notificationSupport: 'Notification' in window,
+        notificationPermission: Notification.permission,
+        scheduledAlarmsCount: scheduledAlarms.size,
+        currentTime: new Date().toLocaleString(),
+        userAgent: navigator.userAgent
+    };
+    
+    console.log('📊 현재 상태:', status);
+    
+    // 테스트 알림 표시
+    if (alarmPermission && 'Notification' in window) {
+        const testNotification = new Notification('🧪 알람 테스트', {
+            body: '알람 기능이 정상적으로 작동합니다!',
+            icon: 'icons/icon-192x192.png',
+            tag: 'test-alarm'
+        });
+        
+        testNotification.onclick = function() {
+            window.focus();
+            testNotification.close();
+        };
+        
+        setTimeout(() => {
+            testNotification.close();
+        }, 3000);
+        
+        showNotification('알람 테스트가 완료되었습니다!', 'success');
+    } else {
+        showNotification('알람 권한이 없거나 지원되지 않습니다.', 'warning');
+    }
+    
+    // 5초 후 테스트 알람 스케줄링
+    const testTodo = {
+        id: 'test-alarm',
+        text: '테스트 알람',
+        time: new Date(Date.now() + 5000).toTimeString().slice(0, 5),
+        date: formatDateForInput(new Date()),
+        priority: 'high',
+        completed: false
+    };
+    
+    console.log('⏰ 5초 후 테스트 알람 스케줄링:', testTodo);
+    scheduleAlarm(testTodo);
 }
 
 // 할일 HTML 생성
