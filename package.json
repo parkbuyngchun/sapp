@@ -1,20 +1,14 @@
 {
   "name": "sapp",
   "version": "1.0.0",
-  "main": "script.js",
-  "scripts": {
-    "start": "live-server --port=8080 --open=/",
-    "dev": "live-server --port=3000 --open=/ --watch=.",
-    "download-assets": "node download-assets.js",
-    "create-icons": "open create-icons.html",
-    "pwa-setup": "npm run download-assets && npm run create-icons",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
+  "description": "일자별 할일을 기록하고 일정을 관리하는 오프라인 PWA",
+  "main": "index.html",
+  "keywords": ["pwa", "todo", "schedule", "offline", "korean"],
+  "author": "사랑이 스케줄",
   "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "live-server": "^1.2.2"
+  "homepage": "https://github.com/username/sapp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/sapp.git"
   }
 }

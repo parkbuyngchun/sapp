@@ -37,6 +37,7 @@ let isListening = false;
 let recognition = null;
 let alarmPermission = false;
 let scheduledAlarms = new Map(); // 스케줄된 알람들을 저장
+let alarmAudio = null; // 알람 소리용 오디오 객체
 
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
@@ -48,6 +49,32 @@ document.addEventListener('DOMContentLoaded', function() {
     setupMissionCounterClick();
     initializeVoiceRecognition();
     initializeAlarmSystem();
+    
+    // 페이지 가시성 변경 시 알람 재스케줄링
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            console.log('페이지가 다시 활성화됨 - 알람 재스케줄링');
+            scheduleAllAlarms();
+        }
+    });
+    
+    // 윈도우 포커스 시 알람 재스케줄링
+    window.addEventListener('focus', function() {
+        console.log('윈도우 포커스됨 - 알람 재스케줄링');
+        scheduleAllAlarms();
+    });
+    
+    // 사용자 상호작용 시 오디오 컨텍스트 활성화
+    document.addEventListener('click', function() {
+        if (window.AudioContext || window.webkitAudioContext) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    console.log('오디오 컨텍스트 활성화됨');
+                });
+            }
+        }
+    }, { once: true });
 });
 
 // 앱 초기화
@@ -165,7 +192,7 @@ function handleAddTodo(e) {
     todoInput.focus();
     
     // 성공 메시지
-    showNotification('할일이 추가되었습니다!', 'success');
+    console.log('할일이 추가되었습니다!');
 }
 
 // 할일 완료 토글
@@ -183,10 +210,10 @@ function toggleTodo(id) {
             // 미션 레벨 달성 체크
             checkMissionLevelUp();
             
-            showNotification(`🎉 미션 완료! 총 ${missionCount}개 완료`, 'success');
+            console.log(`🎉 미션 완료! 총 ${missionCount}개 완료`);
         } else if (wasCompleted && !todo.completed) {
             missionCount = Math.max(0, missionCount - 1);
-            showNotification('할일을 다시 진행중으로 변경했습니다.', 'info');
+            console.log('할일을 다시 진행중으로 변경했습니다.');
         }
         
         saveTodos();
@@ -214,7 +241,7 @@ function deleteTodo(id) {
         todos = todos.filter(t => t.id !== id);
         saveTodos();
         updateDisplay();
-        showNotification('할일이 삭제되었습니다.', 'warning');
+        console.log('할일이 삭제되었습니다.');
     }
 }
 
@@ -266,7 +293,7 @@ function handleEditTodo(e) {
         saveTodos();
         updateDisplay();
         closeModal();
-        showNotification('할일이 수정되었습니다!', 'success');
+        console.log('할일이 수정되었습니다!');
     }
 }
 
@@ -442,7 +469,7 @@ function checkMissionLevelUp() {
     
     if (levelMessages[missionCount]) {
         setTimeout(() => {
-            showNotification(levelMessages[missionCount], 'success');
+            console.log(levelMessages[missionCount]);
         }, 1000);
     }
 }
@@ -528,7 +555,7 @@ function initializeVoiceRecognition() {
     recognition.onstart = function() {
         isListening = true;
         updateVoiceButtonState();
-        showNotification('🎤 음성 인식이 시작되었습니다. 말씀해주세요!', 'info');
+        console.log('🎤 음성 인식이 시작되었습니다. 말씀해주세요!');
         
         // 음성 인식 상태 표시
         showVoiceStatus('listening');
@@ -557,7 +584,7 @@ function initializeVoiceRecognition() {
                 errorMessage = '마이크 사용 권한이 거부되었습니다. 브라우저 설정에서 마이크 권한을 허용해주세요.';
                 break;
         }
-        showNotification(errorMessage, 'error');
+        console.error(errorMessage);
     };
     
     recognition.onend = function() {
@@ -604,7 +631,7 @@ function initializeVoiceRecognition() {
 // 음성 인식 토글
 function toggleVoiceRecognition() {
     if (!recognition) {
-        showNotification('음성 인식을 지원하지 않는 브라우저입니다.', 'error');
+        console.error('음성 인식을 지원하지 않는 브라우저입니다.');
         return;
     }
     
@@ -615,7 +642,7 @@ function toggleVoiceRecognition() {
             recognition.start();
         } catch (error) {
             console.error('음성 인식 시작 오류:', error);
-            showNotification('음성 인식을 시작할 수 없습니다. 잠시 후 다시 시도해주세요.', 'error');
+            console.error('음성 인식을 시작할 수 없습니다. 잠시 후 다시 시도해주세요.');
         }
     }
 }
@@ -645,20 +672,20 @@ function processVoiceInput(transcript) {
         
         // 음성 입력 결과 표시
         showVoiceStatus('success');
-        showNotification(`🎤 "${cleanTranscript}" 음성 입력이 완료되었습니다.`, 'success');
+        console.log(`🎤 "${cleanTranscript}" 음성 입력이 완료되었습니다.`);
         
         // 우선순위 자동 감지
         const detectedPriority = detectPriorityFromVoice(cleanTranscript);
         if (detectedPriority && prioritySelect) {
             prioritySelect.value = detectedPriority;
-            showNotification(`우선순위가 "${detectedPriority === 'high' ? '높음' : detectedPriority === 'medium' ? '보통' : '낮음'}"으로 자동 설정되었습니다.`, 'info');
+            console.log(`우선순위가 "${detectedPriority === 'high' ? '높음' : detectedPriority === 'medium' ? '보통' : '낮음'}"으로 자동 설정되었습니다.`);
         }
         
         // 시간 자동 감지
         const detectedTime = detectTimeFromVoice(cleanTranscript);
         if (detectedTime && timeInput) {
             timeInput.value = detectedTime;
-            showNotification(`시간이 "${detectedTime}"으로 자동 설정되었습니다.`, 'info');
+            console.log(`시간이 "${detectedTime}"으로 자동 설정되었습니다.`);
         }
         
         // 2초 후 자동으로 할일 추가
@@ -775,10 +802,72 @@ function hideVoiceStatus() {
     }
 }
 
+// 진동 기능 초기화
+function initializeVibration() {
+    if ('vibrate' in navigator) {
+        console.log('진동 기능 지원됨');
+        return true;
+    } else {
+        console.log('진동 기능 지원되지 않음');
+        return false;
+    }
+}
+
+// 알람 소리 초기화
+function initializeAlarmSound() {
+    try {
+        // Web Audio API를 사용하여 알람 소리 생성
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // 알람 소리 생성 함수
+        function createAlarmSound() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // 알람 소리 설정 (800Hz, 1초간)
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 1);
+        }
+        
+        // 전역 알람 소리 함수로 저장
+        window.playAlarmSound = createAlarmSound;
+        
+        console.log('알람 소리 초기화 완료');
+    } catch (error) {
+        console.error('알람 소리 초기화 실패:', error);
+        // 대체 방법: 간단한 beep 소리
+        window.playAlarmSound = function() {
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+                audio.volume = 0.5;
+                audio.play().catch(e => console.log('오디오 재생 실패:', e));
+            } catch (e) {
+                console.log('대체 오디오 재생 실패:', e);
+            }
+        };
+    }
+}
+
 // 알람 시스템 초기화
 function initializeAlarmSystem() {
     console.log('initializeAlarmSystem 호출됨');
     console.log('Notification 지원 여부:', 'Notification' in window);
+    
+    // 알람 소리 초기화
+    initializeAlarmSound();
+    
+    // 진동 기능 초기화
+    initializeVibration();
     
     // 알림 권한 요청
     if ('Notification' in window) {
@@ -792,11 +881,9 @@ function initializeAlarmSystem() {
             requestNotificationPermission();
         } else {
             console.log('알림 권한이 거부되었습니다.');
-            showNotification('알림 권한이 필요합니다. 브라우저 설정에서 알림을 허용해주세요.', 'warning');
         }
     } else {
         console.log('이 브라우저는 알림을 지원하지 않습니다.');
-        showNotification('이 브라우저는 알림을 지원하지 않습니다.', 'warning');
     }
     
     // 기존 알람들 스케줄링
@@ -810,11 +897,11 @@ async function requestNotificationPermission() {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
             alarmPermission = true;
-            showNotification('알림 권한이 허용되었습니다! 시간이 설정된 할일에 알람이 울립니다.', 'success');
+            console.log('알림 권한이 허용되었습니다!');
             scheduleAllAlarms();
         } else {
             alarmPermission = false;
-            showNotification('알림 권한이 거부되었습니다. 알람 기능을 사용하려면 브라우저 설정에서 알림을 허용해주세요.', 'warning');
+            console.log('알림 권한이 거부되었습니다.');
         }
     } catch (error) {
         console.error('알림 권한 요청 실패:', error);
@@ -943,32 +1030,92 @@ function showAlarmNotification(todo) {
     
     try {
         console.log('알림 생성 시도...');
+        
+        // 진동 패턴 설정 (더 강한 진동)
+        const vibratePattern = [200, 100, 200, 100, 200];
+        
         const notification = new Notification('⏰ 할일 알림', {
             body: `${todo.text}\n시간: ${todo.time}\n우선순위: ${getPriorityText(todo.priority)}`,
             tag: `todo-${todo.id}`,
-            requireInteraction: true
+            requireInteraction: true,
+            icon: '/icons/icon-192x192.png',
+            badge: '/icons/icon-72x72.png',
+            vibrate: vibratePattern,
+            silent: false // 소리 강제 활성화
         });
         
         console.log('알림이 성공적으로 생성되었습니다.');
+        
+        // 알람 소리 재생
+        if (window.playAlarmSound) {
+            try {
+                window.playAlarmSound();
+                // 1초 후 다시 한 번 재생
+                setTimeout(() => {
+                    window.playAlarmSound();
+                }, 1000);
+            } catch (error) {
+                console.error('알람 소리 재생 실패:', error);
+            }
+        }
+        
+        // 진동 실행 (사용자 상호작용이 있는 경우에만)
+        if ('vibrate' in navigator) {
+            try {
+                navigator.vibrate(vibratePattern);
+                // 2초 후 다시 한 번 진동
+                setTimeout(() => {
+                    navigator.vibrate([300, 100, 300]);
+                }, 2000);
+            } catch (error) {
+                console.error('진동 실행 실패:', error);
+            }
+        }
         
         // 알림 클릭 처리
         notification.onclick = function() {
             console.log('알림 클릭됨 - 할일 완료 처리');
             window.focus();
             toggleTodo(todo.id);
-            showNotification('할일이 완료 처리되었습니다!', 'success');
             notification.close();
         };
         
-        // 5초 후 자동 닫기
+        // 알림 오류 처리
+        notification.onerror = function(error) {
+            console.error('알림 표시 오류:', error);
+        };
+        
+        // 15초 후 자동 닫기 (더 긴 시간으로 변경)
         setTimeout(() => {
             notification.close();
-        }, 5000);
+        }, 15000);
         
     } catch (error) {
         console.error('알림 생성 실패:', error);
-        showNotification('알림을 표시할 수 없습니다. 브라우저 설정을 확인해주세요.', 'error');
+        // 알림 생성 실패 시 대체 방법 (콘솔 로그)
+        console.log(`🔔 알람: ${todo.text} (${todo.time})`);
+        
+        // 대체 알람 방법: 페이지 제목 깜빡이기
+        flashPageTitle(todo.text);
     }
+}
+
+// 페이지 제목 깜빡이기 (대체 알람 방법)
+function flashPageTitle(todoText) {
+    const originalTitle = document.title;
+    let flashCount = 0;
+    const maxFlashes = 10;
+    
+    const flashInterval = setInterval(() => {
+        if (flashCount >= maxFlashes) {
+            document.title = originalTitle;
+            clearInterval(flashInterval);
+            return;
+        }
+        
+        document.title = flashCount % 2 === 0 ? `🔔 ${todoText}` : originalTitle;
+        flashCount++;
+    }, 500);
 }
 
 // 모든 알람 클리어
@@ -1014,11 +1161,60 @@ function showAlarmSettings() {
     message += `\n- 알림 지원: ${'Notification' in window ? '지원됨' : '지원 안됨'}`;
     message += `\n- 현재 알림 권한: ${Notification.permission}`;
     
-    // 테스트 알람 옵션 추가
-    const testAlarm = confirm(message + '\n\n즉시 테스트 알림을 표시하시겠습니까?');
+    // 알람 테스트 옵션 추가
+    const testAlarm = confirm(message + '\n\n알람 기능을 테스트하시겠습니까?');
     if (testAlarm) {
-        scheduleTestAlarm();
+        testAlarmSoundAndVibration();
     }
+}
+
+// 알람 소리/진동 테스트
+function testAlarmSoundAndVibration() {
+    console.log('알람 소리/진동 테스트 시작');
+    
+    // 소리 테스트
+    if (window.playAlarmSound) {
+        try {
+            window.playAlarmSound();
+            console.log('알람 소리 테스트 완료');
+        } catch (error) {
+            console.error('알람 소리 테스트 실패:', error);
+        }
+    }
+    
+    // 진동 테스트
+    if ('vibrate' in navigator) {
+        try {
+            navigator.vibrate([200, 100, 200, 100, 200]);
+            console.log('진동 테스트 완료');
+        } catch (error) {
+            console.error('진동 테스트 실패:', error);
+        }
+    } else {
+        console.log('진동 기능을 지원하지 않습니다.');
+    }
+    
+    // 브라우저 알림 테스트
+    if (Notification.permission === 'granted') {
+        try {
+            const notification = new Notification('🔔 알람 테스트', {
+                body: '소리와 진동이 정상적으로 작동하는지 확인하세요.',
+                icon: '/icons/icon-192x192.png',
+                vibrate: [200, 100, 200],
+                silent: false
+            });
+            
+            setTimeout(() => {
+                notification.close();
+            }, 3000);
+            
+            console.log('브라우저 알림 테스트 완료');
+        } catch (error) {
+            console.error('브라우저 알림 테스트 실패:', error);
+        }
+    }
+    
+    alert('알람 테스트가 완료되었습니다.\n소리와 진동이 들렸는지 확인해주세요.');
 }
 
 // 테스트 알람 스케줄링
@@ -1042,13 +1238,12 @@ function scheduleTestAlarm() {
                 testNotification.close();
             }, 3000);
             
-            showNotification('테스트 알림이 표시되었습니다!', 'success');
+            console.log('테스트 알림이 표시되었습니다!');
         } catch (error) {
             console.error('테스트 알림 생성 실패:', error);
-            showNotification('테스트 알림 생성 실패: ' + error.message, 'error');
         }
     } else {
-        showNotification('알림 권한이 허용되지 않았습니다. 브라우저 설정을 확인해주세요.', 'warning');
+        console.log('알림 권한이 허용되지 않았습니다.');
     }
 }
 
@@ -1356,7 +1551,7 @@ function loadTodos() {
         console.error('할일 데이터를 불러오는데 실패했습니다:', e);
         todos = [];
         missionCount = 0;
-        showNotification('데이터를 불러오는데 실패했습니다. 새로 시작합니다.', 'warning');
+        console.warn('데이터를 불러오는데 실패했습니다. 새로 시작합니다.');
     }
 }
 
@@ -1371,7 +1566,7 @@ function saveTodos() {
         return true;
     } catch (e) {
         console.error('할일 데이터를 저장하는데 실패했습니다:', e);
-        showNotification('데이터 저장에 실패했습니다. 브라우저 저장 공간을 확인해주세요.', 'error');
+        console.error('데이터 저장에 실패했습니다. 브라우저 저장 공간을 확인해주세요.');
         return false;
     }
 }
@@ -1382,7 +1577,7 @@ function clearAllData() {
         localStorage.removeItem('sapp-todos');
         todos = [];
         updateDisplay();
-        showNotification('모든 데이터가 삭제되었습니다.', 'info');
+        console.log('모든 데이터가 삭제되었습니다.');
     }
 }
 
@@ -1399,106 +1594,14 @@ function exportData() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        showNotification('데이터가 백업되었습니다.', 'success');
+        console.log('데이터가 백업되었습니다.');
     } catch (e) {
         console.error('데이터 백업에 실패했습니다:', e);
-        showNotification('데이터 백업에 실패했습니다.', 'error');
+        console.error('데이터 백업에 실패했습니다.');
     }
 }
 
-// 알림 표시
-function showNotification(message, type = 'info') {
-    // 기존 알림 제거
-    const existingNotification = document.querySelector('.notification');
-    if (existingNotification) {
-        existingNotification.remove();
-    }
-    
-    // 새 알림 생성
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <i class="fas fa-${getNotificationIcon(type)}"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    // 스타일 적용
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${getNotificationColor(type)};
-        color: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        z-index: 10000;
-        animation: slideInRight 0.3s ease-out;
-        max-width: 300px;
-    `;
-    
-    // 애니메이션 CSS 추가
-    if (!document.querySelector('#notification-styles')) {
-        const style = document.createElement('style');
-        style.id = 'notification-styles';
-        style.textContent = `
-            @keyframes slideInRight {
-                from {
-                    opacity: 0;
-                    transform: translateX(100%);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-            }
-            .notification-content {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-    
-    document.body.appendChild(notification);
-    
-    // 3초 후 자동 제거
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.style.animation = 'slideInRight 0.3s ease-out reverse';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 300);
-        }
-    }, 3000);
-}
-
-// 알림 아이콘
-function getNotificationIcon(type) {
-    const icons = {
-        success: 'check-circle',
-        error: 'exclamation-circle',
-        warning: 'exclamation-triangle',
-        info: 'info-circle'
-    };
-    return icons[type] || 'info-circle';
-}
-
-// 알림 색상
-function getNotificationColor(type) {
-    const colors = {
-        success: '#27ae60',
-        error: '#e74c3c',
-        warning: '#f39c12',
-        info: '#3498db'
-    };
-    return colors[type] || '#3498db';
-}
+// showNotification 함수 제거됨 - 모든 알림을 콘솔 로그로 대체
 
 // 키보드 단축키
 document.addEventListener('keydown', function(e) {
@@ -1614,12 +1717,12 @@ function registerServiceWorker() {
 // 오프라인/온라인 상태 감지
 window.addEventListener('online', () => {
     console.log('온라인 상태입니다.');
-    showNotification('인터넷에 연결되었습니다.', 'success');
+    console.log('인터넷에 연결되었습니다.');
 });
 
 window.addEventListener('offline', () => {
     console.log('오프라인 상태입니다.');
-    showNotification('오프라인 모드입니다. 모든 기능이 로컬에서 작동합니다.', 'info');
+    console.log('오프라인 모드입니다. 모든 기능이 로컬에서 작동합니다.');
 });
 
 // PWA 설치 프롬프트

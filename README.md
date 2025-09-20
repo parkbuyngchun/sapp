@@ -8,31 +8,23 @@
 - 📅 **일자별 할일 관리** - 날짜별로 할일을 체계적으로 관리
 - ⭐ **우선순위 설정** - 높음/보통/낮음 우선순위로 할일 분류
 - ⏰ **시간 설정** - 각 할일에 시간을 지정하여 스케줄링
+- 🔔 **알람 기능** - 설정된 시간에 브라우저 알림으로 할일 알림
+- 🎤 **음성 입력** - 음성으로 할일을 빠르게 추가
 - 📊 **통계 기능** - 전체/완료/진행중 할일 통계 제공
+- 🎯 **미션 시스템** - 완료한 할일 수에 따른 레벨업 시스템
 - 📱 **모바일 최적화** - 휴대폰에서 사용하기 최적화된 UI/UX
 - 💾 **로컬 저장** - 브라우저 localStorage에 데이터 저장
 - 🎨 **세련된 디자인** - 글래스모피즘과 그라데이션을 활용한 현대적 디자인
 
-## 🚀 설치 및 실행
+## 🚀 사용 방법
 
-### 1. 개발 서버 실행
-```bash
-npm start
-```
+### 1. 웹에서 바로 사용
+- GitHub Pages나 다른 웹 호스팅 서비스에 업로드하여 사용
+- 브라우저에서 직접 `index.html` 파일을 열어서 사용 가능
 
-### 2. PWA 리소스 설정 (최초 1회)
-```bash
-# 오프라인 폰트 및 아이콘 다운로드
-npm run download-assets
-
-# PWA 아이콘 생성 (브라우저에서 열림)
-npm run create-icons
-```
-
-### 3. 완전 설정 (한 번에)
-```bash
-npm run pwa-setup
-```
+### 2. PWA 설치
+- 모바일: 브라우저에서 "홈 화면에 추가" 선택
+- 데스크톱: 브라우저 주소창의 설치 아이콘 클릭
 
 ## 📱 PWA 설치 방법
 
@@ -53,7 +45,7 @@ npm run pwa-setup
 - **Storage**: localStorage
 - **Fonts**: Noto Sans KR (로컬 저장)
 - **Icons**: Font Awesome (로컬 저장)
-- **Server**: live-server (개발용)
+- **Hosting**: GitHub Pages, Netlify, Vercel 등 정적 호스팅
 
 ## 📁 프로젝트 구조
 
@@ -61,32 +53,32 @@ npm run pwa-setup
 sapp/
 ├── index.html              # 메인 HTML 파일
 ├── style.css               # 스타일시트
-├── script.js               # JavaScript 로직
+├── script.js               # JavaScript 로직 (알람, 음성인식 포함)
 ├── manifest.json           # PWA 매니페스트
 ├── sw.js                   # Service Worker
-├── download-assets.js      # 오프라인 리소스 다운로드 스크립트
-├── create-icons.html       # PWA 아이콘 생성기
+├── package.json            # 프로젝트 설정
+├── .gitignore              # Git 무시 파일 목록
+├── README.md               # 프로젝트 설명서
 ├── fonts/                  # 로컬 폰트 파일
 │   ├── noto-sans-kr-300.woff2
 │   ├── noto-sans-kr-400.woff2
 │   ├── noto-sans-kr-500.woff2
 │   ├── noto-sans-kr-600.woff2
 │   └── noto-sans-kr-700.woff2
-├── icons/                  # PWA 아이콘 및 Font Awesome
-│   ├── icon-16x16.png
-│   ├── icon-32x32.png
-│   ├── icon-72x72.png
-│   ├── icon-96x96.png
-│   ├── icon-128x128.png
-│   ├── icon-144x144.png
-│   ├── icon-152x152.png
-│   ├── icon-192x192.png
-│   ├── icon-384x384.png
-│   ├── icon-512x512.png
-│   ├── font-awesome.woff2
-│   ├── font-awesome.woff
-│   └── font-awesome.ttf
-└── package.json            # 프로젝트 설정
+└── icons/                  # PWA 아이콘 및 Font Awesome
+    ├── icon-16x16.png
+    ├── icon-32x32.png
+    ├── icon-72x72.png
+    ├── icon-96x96.png
+    ├── icon-128x128.png
+    ├── icon-144x144.png
+    ├── icon-152x152.png
+    ├── icon-192x192.png
+    ├── icon-384x384.png
+    ├── icon-512x512.png
+    ├── font-awesome.woff2
+    ├── font-awesome.woff
+    └── font-awesome.ttf
 ```
 
 ## 🎨 디자인 특징
@@ -111,24 +103,18 @@ sapp/
 3. **로컬 아이콘**: Font Awesome CDN 대신 로컬 아이콘 파일 사용
 4. **캐싱 전략**: 정적 리소스는 Cache First, 동적 리소스는 Network First
 
-## 🛠️ 개발 명령어
+## 🛠️ 배포 방법
 
-```bash
-# 개발 서버 실행 (포트 3000)
-npm run dev
+### GitHub Pages
+1. GitHub 저장소에 코드 업로드
+2. Settings > Pages에서 GitHub Pages 활성화
+3. Source를 "Deploy from a branch"로 설정
+4. Branch를 "main"으로 선택
+5. 저장 후 자동으로 배포됨
 
-# 프로덕션 서버 실행 (포트 8080)
-npm start
-
-# 오프라인 리소스 다운로드
-npm run download-assets
-
-# PWA 아이콘 생성
-npm run create-icons
-
-# PWA 완전 설정
-npm run pwa-setup
-```
+### 다른 호스팅 서비스
+- Netlify, Vercel, Firebase Hosting 등에 업로드
+- 정적 파일 호스팅이 가능한 모든 서비스에서 사용 가능
 
 ## 📱 지원 브라우저
 
@@ -138,11 +124,30 @@ npm run pwa-setup
 - ✅ Edge 80+
 - ✅ Samsung Internet 12+
 
+## 🔔 알람 기능 상세
+
+### 알람 설정 방법
+1. 할일 추가 시 시간을 입력하면 자동으로 알람이 설정됩니다
+2. 알람 설정 버튼(🔔)을 클릭하여 현재 설정된 알람을 확인할 수 있습니다
+3. 알람 테스트 페이지에서 알람 기능을 테스트할 수 있습니다
+
+### 알람 특징
+- **자동 스케줄링**: 할일에 시간을 설정하면 자동으로 알람이 등록됩니다
+- **브라우저 알림**: 설정된 시간에 브라우저 알림이 표시됩니다
+- **클릭으로 완료**: 알림을 클릭하면 해당 할일이 자동으로 완료 처리됩니다
+- **오프라인 작동**: 인터넷 연결이 없어도 알람이 정상 작동합니다
+- **권한 관리**: 브라우저 알림 권한이 필요하며, 앱에서 자동으로 요청합니다
+
+### 알람 테스트
+- `test-alarm.html` 파일을 열어서 알람 기능을 테스트할 수 있습니다
+- 즉시 알림, 지연 알림, 할일 알람 시뮬레이션을 제공합니다
+
 ## 🎯 사용 시나리오
 
 - 📝 **일일 할일 관리**: 매일의 할일을 체계적으로 관리
 - 📅 **주간 계획**: 주간 단위로 할일을 미리 계획
 - ⏰ **시간 관리**: 시간대별로 할일을 배치하여 효율적인 시간 관리
+- 🔔 **알람 활용**: 중요한 할일에 알람을 설정하여 놓치지 않도록 관리
 - 📊 **진행률 추적**: 완료된 할일과 진행중인 할일을 한눈에 확인
 
 ## 🔒 개인정보 보호
