@@ -774,12 +774,18 @@ function hideVoiceStatus() {
 
 // 알람 시스템 초기화
 function initializeAlarmSystem() {
+    console.log('initializeAlarmSystem 호출됨');
+    console.log('Notification 지원 여부:', 'Notification' in window);
+    
     // 알림 권한 요청
     if ('Notification' in window) {
+        console.log('현재 알림 권한 상태:', Notification.permission);
+        
         if (Notification.permission === 'granted') {
             alarmPermission = true;
             console.log('알림 권한이 이미 허용되어 있습니다.');
         } else if (Notification.permission !== 'denied') {
+            console.log('알림 권한을 요청합니다...');
             requestNotificationPermission();
         } else {
             console.log('알림 권한이 거부되었습니다.');
@@ -791,6 +797,7 @@ function initializeAlarmSystem() {
     }
     
     // 기존 알람들 스케줄링
+    console.log('기존 알람들을 스케줄링합니다...');
     scheduleAllAlarms();
 }
 
@@ -814,29 +821,70 @@ async function requestNotificationPermission() {
 
 // 모든 알람 스케줄링
 function scheduleAllAlarms() {
-    if (!alarmPermission) return;
+    console.log('scheduleAllAlarms 호출됨');
+    console.log('알람 권한:', alarmPermission);
+    console.log('총 할일 수:', todos.length);
+    
+    if (!alarmPermission) {
+        console.log('알람 권한이 없어서 알람을 스케줄링하지 않습니다.');
+        return;
+    }
     
     // 기존 알람들 클리어
+    console.log('기존 알람들을 클리어합니다...');
     clearAllAlarms();
     
     // 모든 할일에 대해 알람 스케줄링
-    todos.forEach(todo => {
-        if (todo.time && !todo.completed) {
-            scheduleAlarm(todo);
-        }
+    const alarmCandidates = todos.filter(todo => todo.time && !todo.completed);
+    console.log('알람 후보 할일 수:', alarmCandidates.length);
+    
+    alarmCandidates.forEach(todo => {
+        console.log('알람 스케줄링 시도:', todo.text, todo.time);
+        scheduleAlarm(todo);
     });
+    
+    console.log('모든 알람 스케줄링 완료. 현재 스케줄된 알람 수:', scheduledAlarms.size);
 }
 
 // 개별 알람 스케줄링
 function scheduleAlarm(todo) {
-    if (!alarmPermission || !todo.time || todo.completed) return;
+    console.log('scheduleAlarm 호출됨:', todo);
     
-    const alarmTime = calculateAlarmTime(todo.date, todo.time);
-    if (!alarmTime || alarmTime <= new Date()) {
-        return; // 과거 시간이면 스케줄링하지 않음
+    if (!alarmPermission) {
+        console.log('알람 권한이 없습니다.');
+        return;
     }
     
-    const timeUntilAlarm = alarmTime.getTime() - new Date().getTime();
+    if (!todo.time) {
+        console.log('할일에 시간이 설정되지 않았습니다.');
+        return;
+    }
+    
+    if (todo.completed) {
+        console.log('완료된 할일은 알람을 설정하지 않습니다.');
+        return;
+    }
+    
+    const alarmTime = calculateAlarmTime(todo.date, todo.time);
+    console.log('계산된 알람 시간:', alarmTime);
+    
+    if (!alarmTime) {
+        console.log('알람 시간 계산 실패');
+        return;
+    }
+    
+    const now = new Date();
+    console.log('현재 시간:', now);
+    console.log('알람 시간:', alarmTime);
+    
+    if (alarmTime <= now) {
+        console.log('과거 시간이므로 알람을 설정하지 않습니다.');
+        return;
+    }
+    
+    const timeUntilAlarm = alarmTime.getTime() - now.getTime();
+    console.log('알람까지 남은 시간 (ms):', timeUntilAlarm);
+    console.log('알람까지 남은 시간 (분):', Math.round(timeUntilAlarm / 60000));
     
     // 알람 ID 생성
     const alarmId = `alarm_${todo.id}_${todo.date}_${todo.time}`;
@@ -844,25 +892,36 @@ function scheduleAlarm(todo) {
     // 기존 알람이 있으면 취소
     if (scheduledAlarms.has(alarmId)) {
         clearTimeout(scheduledAlarms.get(alarmId));
+        console.log('기존 알람을 취소했습니다:', alarmId);
     }
     
     // 새 알람 스케줄링
     const timeoutId = setTimeout(() => {
+        console.log('알람이 울렸습니다!', todo.text);
         showAlarmNotification(todo);
         scheduledAlarms.delete(alarmId);
     }, timeUntilAlarm);
     
     scheduledAlarms.set(alarmId, timeoutId);
     console.log(`알람 스케줄됨: ${todo.text} - ${alarmTime.toLocaleString()}`);
+    console.log('현재 스케줄된 알람 수:', scheduledAlarms.size);
 }
 
 // 알람 시간 계산
 function calculateAlarmTime(dateStr, timeStr) {
     try {
+        console.log('calculateAlarmTime 호출됨:', dateStr, timeStr);
+        
         const [year, month, day] = dateStr.split('-').map(Number);
         const [hours, minutes] = timeStr.split(':').map(Number);
         
+        console.log('파싱된 날짜:', year, month, day);
+        console.log('파싱된 시간:', hours, minutes);
+        
         const alarmDate = new Date(year, month - 1, day, hours, minutes, 0);
+        console.log('생성된 Date 객체:', alarmDate);
+        console.log('Date 객체 유효성:', !isNaN(alarmDate.getTime()));
+        
         return alarmDate;
     } catch (error) {
         console.error('알람 시간 계산 오류:', error);
@@ -872,44 +931,60 @@ function calculateAlarmTime(dateStr, timeStr) {
 
 // 알람 알림 표시
 function showAlarmNotification(todo) {
-    if (!alarmPermission) return;
+    console.log('showAlarmNotification 호출됨:', todo);
     
-    const notification = new Notification('⏰ 할일 알림', {
-        body: `${todo.text}\n시간: ${todo.time}\n우선순위: ${getPriorityText(todo.priority)}`,
-        icon: 'icons/icon-192x192.png',
-        badge: 'icons/icon-72x72.png',
-        tag: `todo-${todo.id}`,
-        requireInteraction: true,
-        actions: [
-            { action: 'complete', title: '완료 처리' },
-            { action: 'snooze', title: '10분 후 다시' }
-        ]
-    });
+    if (!alarmPermission) {
+        console.log('알람 권한이 없어서 알림을 표시할 수 없습니다.');
+        return;
+    }
     
-    // 알림 클릭 시 앱으로 포커스
-    notification.onclick = function() {
-        window.focus();
-        notification.close();
-    };
-    
-    // 알림 액션 처리
-    notification.addEventListener('click', function(event) {
-        if (event.action === 'complete') {
-            toggleTodo(todo.id);
-            showNotification('할일이 완료 처리되었습니다!', 'success');
-        } else if (event.action === 'snooze') {
-            // 10분 후 다시 알림
-            setTimeout(() => {
-                showAlarmNotification(todo);
-            }, 10 * 60 * 1000);
-            showNotification('10분 후에 다시 알림이 울립니다.', 'info');
-        }
-    });
-    
-    // 5초 후 자동 닫기
-    setTimeout(() => {
-        notification.close();
-    }, 5000);
+    try {
+        console.log('알림 생성 시도...');
+        const notification = new Notification('⏰ 할일 알림', {
+            body: `${todo.text}\n시간: ${todo.time}\n우선순위: ${getPriorityText(todo.priority)}`,
+            icon: 'icons/icon-192x192.png',
+            badge: 'icons/icon-72x72.png',
+            tag: `todo-${todo.id}`,
+            requireInteraction: true,
+            actions: [
+                { action: 'complete', title: '완료 처리' },
+                { action: 'snooze', title: '10분 후 다시' }
+            ]
+        });
+        
+        console.log('알림이 성공적으로 생성되었습니다.');
+        
+        // 알림 클릭 시 앱으로 포커스
+        notification.onclick = function() {
+            console.log('알림 클릭됨');
+            window.focus();
+            notification.close();
+        };
+        
+        // 알림 액션 처리
+        notification.addEventListener('click', function(event) {
+            console.log('알림 액션 클릭됨:', event.action);
+            if (event.action === 'complete') {
+                toggleTodo(todo.id);
+                showNotification('할일이 완료 처리되었습니다!', 'success');
+            } else if (event.action === 'snooze') {
+                // 10분 후 다시 알림
+                setTimeout(() => {
+                    showAlarmNotification(todo);
+                }, 10 * 60 * 1000);
+                showNotification('10분 후에 다시 알림이 울립니다.', 'info');
+            }
+        });
+        
+        // 5초 후 자동 닫기
+        setTimeout(() => {
+            notification.close();
+        }, 5000);
+        
+    } catch (error) {
+        console.error('알림 생성 실패:', error);
+        showNotification('알림을 표시할 수 없습니다. 브라우저 설정을 확인해주세요.', 'error');
+    }
 }
 
 // 모든 알람 클리어
@@ -949,8 +1024,40 @@ function showAlarmSettings() {
     }
     
     message += '\n💡 알림 권한이 허용되어야 알람이 작동합니다.';
+    message += '\n\n🔧 디버그 정보:';
+    message += `\n- 알람 권한: ${alarmPermission ? '허용됨' : '거부됨'}`;
+    message += `\n- 스케줄된 알람 수: ${scheduledAlarms.size}`;
+    message += `\n- 알림 지원: ${'Notification' in window ? '지원됨' : '지원 안됨'}`;
+    message += `\n- 현재 알림 권한: ${Notification.permission}`;
     
-    alert(message);
+    // 테스트 알람 옵션 추가
+    const testAlarm = confirm(message + '\n\n테스트 알람을 5초 후에 울리시겠습니까?');
+    if (testAlarm) {
+        scheduleTestAlarm();
+    }
+}
+
+// 테스트 알람 스케줄링
+function scheduleTestAlarm() {
+    console.log('테스트 알람 스케줄링...');
+    
+    const testTodo = {
+        id: 'test-alarm',
+        text: '테스트 알람',
+        time: '00:00',
+        priority: 'high',
+        completed: false,
+        date: formatDateForInput(new Date()),
+        createdAt: new Date().toISOString()
+    };
+    
+    // 5초 후에 알람이 울리도록 설정
+    setTimeout(() => {
+        console.log('테스트 알람이 울렸습니다!');
+        showAlarmNotification(testTodo);
+    }, 5000);
+    
+    showNotification('5초 후에 테스트 알람이 울립니다!', 'info');
 }
 
 // 할일 HTML 생성
