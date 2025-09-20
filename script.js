@@ -152,7 +152,10 @@ function handleAddTodo(e) {
     
     // 알람 스케줄링
     if (todo.time) {
+        console.log('새 할일 추가 - 알람 스케줄링 시도:', todo);
         scheduleAlarm(todo);
+    } else {
+        console.log('새 할일 추가 - 시간이 없어서 알람 스케줄링하지 않음:', todo);
     }
     
     // 폼 초기화
@@ -942,39 +945,20 @@ function showAlarmNotification(todo) {
         console.log('알림 생성 시도...');
         const notification = new Notification('⏰ 할일 알림', {
             body: `${todo.text}\n시간: ${todo.time}\n우선순위: ${getPriorityText(todo.priority)}`,
-            icon: 'icons/icon-192x192.png',
-            badge: 'icons/icon-72x72.png',
             tag: `todo-${todo.id}`,
-            requireInteraction: true,
-            actions: [
-                { action: 'complete', title: '완료 처리' },
-                { action: 'snooze', title: '10분 후 다시' }
-            ]
+            requireInteraction: true
         });
         
         console.log('알림이 성공적으로 생성되었습니다.');
         
-        // 알림 클릭 시 앱으로 포커스
+        // 알림 클릭 처리
         notification.onclick = function() {
-            console.log('알림 클릭됨');
+            console.log('알림 클릭됨 - 할일 완료 처리');
             window.focus();
+            toggleTodo(todo.id);
+            showNotification('할일이 완료 처리되었습니다!', 'success');
             notification.close();
         };
-        
-        // 알림 액션 처리
-        notification.addEventListener('click', function(event) {
-            console.log('알림 액션 클릭됨:', event.action);
-            if (event.action === 'complete') {
-                toggleTodo(todo.id);
-                showNotification('할일이 완료 처리되었습니다!', 'success');
-            } else if (event.action === 'snooze') {
-                // 10분 후 다시 알림
-                setTimeout(() => {
-                    showAlarmNotification(todo);
-                }, 10 * 60 * 1000);
-                showNotification('10분 후에 다시 알림이 울립니다.', 'info');
-            }
-        });
         
         // 5초 후 자동 닫기
         setTimeout(() => {
@@ -1031,7 +1015,7 @@ function showAlarmSettings() {
     message += `\n- 현재 알림 권한: ${Notification.permission}`;
     
     // 테스트 알람 옵션 추가
-    const testAlarm = confirm(message + '\n\n테스트 알람을 5초 후에 울리시겠습니까?');
+    const testAlarm = confirm(message + '\n\n즉시 테스트 알림을 표시하시겠습니까?');
     if (testAlarm) {
         scheduleTestAlarm();
     }
@@ -1041,23 +1025,31 @@ function showAlarmSettings() {
 function scheduleTestAlarm() {
     console.log('테스트 알람 스케줄링...');
     
-    const testTodo = {
-        id: 'test-alarm',
-        text: '테스트 알람',
-        time: '00:00',
-        priority: 'high',
-        completed: false,
-        date: formatDateForInput(new Date()),
-        createdAt: new Date().toISOString()
-    };
-    
-    // 5초 후에 알람이 울리도록 설정
-    setTimeout(() => {
-        console.log('테스트 알람이 울렸습니다!');
-        showAlarmNotification(testTodo);
-    }, 5000);
-    
-    showNotification('5초 후에 테스트 알람이 울립니다!', 'info');
+    // 즉시 알림 테스트
+    if (Notification.permission === 'granted') {
+        try {
+            const testNotification = new Notification('🔔 테스트 알림', {
+                body: '알람 기능이 정상적으로 작동합니다!',
+                tag: 'test-notification'
+            });
+            
+            testNotification.onclick = function() {
+                console.log('테스트 알림 클릭됨');
+                testNotification.close();
+            };
+            
+            setTimeout(() => {
+                testNotification.close();
+            }, 3000);
+            
+            showNotification('테스트 알림이 표시되었습니다!', 'success');
+        } catch (error) {
+            console.error('테스트 알림 생성 실패:', error);
+            showNotification('테스트 알림 생성 실패: ' + error.message, 'error');
+        }
+    } else {
+        showNotification('알림 권한이 허용되지 않았습니다. 브라우저 설정을 확인해주세요.', 'warning');
+    }
 }
 
 // 할일 HTML 생성
