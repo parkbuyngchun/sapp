@@ -887,8 +887,9 @@ function initializeAlarmSound() {
 
 // 알람 시스템 초기화
 function initializeAlarmSystem() {
-    console.log('initializeAlarmSystem 호출됨');
+    console.log('🔔 initializeAlarmSystem 호출됨');
     console.log('Notification 지원 여부:', 'Notification' in window);
+    console.log('현재 시간:', new Date().toLocaleString());
     
     // 알람 소리 초기화
     initializeAlarmSound();
@@ -902,19 +903,19 @@ function initializeAlarmSystem() {
         
         if (Notification.permission === 'granted') {
             alarmPermission = true;
-            console.log('알림 권한이 이미 허용되어 있습니다.');
+            console.log('✅ 알림 권한이 이미 허용되어 있습니다.');
         } else if (Notification.permission !== 'denied') {
-            console.log('알림 권한을 요청합니다...');
+            console.log('🔔 알림 권한을 요청합니다...');
             requestNotificationPermission();
         } else {
-            console.log('알림 권한이 거부되었습니다.');
+            console.log('❌ 알림 권한이 거부되었습니다.');
         }
     } else {
-        console.log('이 브라우저는 알림을 지원하지 않습니다.');
+        console.log('❌ 이 브라우저는 알림을 지원하지 않습니다.');
     }
     
     // 기존 알람들 스케줄링
-    console.log('기존 알람들을 스케줄링합니다...');
+    console.log('🔔 기존 알람들을 스케줄링합니다...');
     scheduleAllAlarms();
 }
 
@@ -965,51 +966,55 @@ function scheduleAllAlarms() {
 
 // 개별 알람 스케줄링
 function scheduleAlarm(todo) {
-    console.log('scheduleAlarm 호출됨:', todo);
+    console.log('🔔 scheduleAlarm 호출됨:', todo);
+    console.log('현재 알람 권한 상태:', alarmPermission);
+    console.log('현재 시간:', new Date().toLocaleString());
     
     if (!alarmPermission) {
-        console.log('알람 권한이 없습니다.');
+        console.log('❌ 알람 권한이 없습니다.');
         return false;
     }
     
     if (!todo.time) {
-        console.log('할일에 시간이 설정되지 않았습니다.');
+        console.log('❌ 할일에 시간이 설정되지 않았습니다.');
         return false;
     }
     
     if (todo.completed) {
-        console.log('완료된 할일은 알람을 설정하지 않습니다.');
+        console.log('❌ 완료된 할일은 알람을 설정하지 않습니다.');
         return false;
     }
     
     const alarmTime = calculateAlarmTime(todo.date, todo.time);
-    console.log('계산된 알람 시간:', alarmTime);
+    console.log('📅 계산된 알람 시간:', alarmTime);
     
     if (!alarmTime) {
-        console.log('알람 시간 계산 실패');
+        console.log('❌ 알람 시간 계산 실패');
         return false;
     }
     
     const now = new Date();
-    console.log('현재 시간:', now);
-    console.log('알람 시간:', alarmTime);
+    console.log('⏰ 현재 시간:', now.toLocaleString());
+    console.log('⏰ 알람 시간:', alarmTime.toLocaleString());
     
     if (alarmTime <= now) {
-        console.log('과거 시간이므로 알람을 설정하지 않습니다.');
+        console.log('❌ 과거 시간이므로 알람을 설정하지 않습니다.');
+        console.log('시간 차이:', (now.getTime() - alarmTime.getTime()) / 1000, '초');
         return false;
     }
     
     const timeUntilAlarm = alarmTime.getTime() - now.getTime();
-    console.log('알람까지 남은 시간 (ms):', timeUntilAlarm);
-    console.log('알람까지 남은 시간 (분):', Math.round(timeUntilAlarm / 60000));
+    console.log('⏱️ 알람까지 남은 시간 (ms):', timeUntilAlarm);
+    console.log('⏱️ 알람까지 남은 시간 (분):', Math.round(timeUntilAlarm / 60000));
     
     // 알람 ID 생성
     const alarmId = `alarm_${todo.id}_${todo.date}_${todo.time}`;
+    console.log('🆔 알람 ID:', alarmId);
     
     // 기존 알람이 있으면 취소
     if (scheduledAlarms.has(alarmId)) {
         clearTimeout(scheduledAlarms.get(alarmId));
-        console.log('기존 알람을 취소했습니다:', alarmId);
+        console.log('🔄 기존 알람을 취소했습니다:', alarmId);
     }
     
     // 새 알람 스케줄링
@@ -1021,7 +1026,8 @@ function scheduleAlarm(todo) {
     
     scheduledAlarms.set(alarmId, timeoutId);
     console.log(`✅ 알람 스케줄됨: ${todo.text} - ${alarmTime.toLocaleString()}`);
-    console.log('현재 스케줄된 알람 수:', scheduledAlarms.size);
+    console.log('📊 현재 스케줄된 알람 수:', scheduledAlarms.size);
+    console.log('🆔 Timeout ID:', timeoutId);
     
     return true;
 }
@@ -1197,6 +1203,12 @@ function showAlarmSettings() {
     if (testAlarm) {
         testAlarmSoundAndVibration();
     }
+    
+    // 즉시 알람 테스트 옵션 추가
+    const immediateTest = confirm(message + '\n\n즉시 알람을 테스트하시겠습니까? (5초 후)');
+    if (immediateTest) {
+        testImmediateAlarm();
+    }
 }
 
 // 알람 소리/진동 테스트
@@ -1218,6 +1230,38 @@ function testAlarmSoundAndVibration() {
     showAlarmNotification(testTodo);
     
     console.log('알람 테스트 완료 - 실제 알람과 동일한 방식으로 테스트됨');
+}
+
+// 즉시 알람 테스트 (5초 후)
+function testImmediateAlarm() {
+    console.log('⏰ 즉시 알람 테스트 시작 (5초 후)');
+    
+    // 5초 후에 울릴 알람을 위한 테스트 할일 생성
+    const now = new Date();
+    const testTime = new Date(now.getTime() + 5000); // 5초 후
+    const testTimeStr = testTime.toTimeString().slice(0, 5); // HH:MM 형식
+    
+    const testTodo = {
+        id: 'immediate-test-alarm',
+        text: '즉시 알람 테스트 (5초 후)',
+        time: testTimeStr,
+        priority: 'high',
+        completed: false,
+        date: formatDateForInput(now),
+        createdAt: now.toISOString()
+    };
+    
+    console.log('테스트 할일:', testTodo);
+    console.log('알람 예정 시간:', testTime.toLocaleString());
+    
+    // 알람 스케줄링
+    const success = scheduleAlarm(testTodo);
+    
+    if (success) {
+        alert('즉시 알람 테스트가 설정되었습니다.\n5초 후에 알람이 울립니다.');
+    } else {
+        alert('즉시 알람 테스트 설정에 실패했습니다.\n콘솔을 확인해주세요.');
+    }
 }
 
 // 테스트 알람 스케줄링
